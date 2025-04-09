@@ -36,6 +36,7 @@ runs:
       uses: actions/checkout@v4
       with:
         repository: canonical/juju-dashboard-charm
+        ref: fix/pin-wheel
         path: juju-dashboard-charm
     - name: Set up Juju Dashboard release
       if: ${{ env.build_type == 'dashboard-release' }}
