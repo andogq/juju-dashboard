@@ -1,16 +1,16 @@
 import { expect } from "@playwright/test";
 
 import { test } from "../fixtures/setup";
+import { AddModel, AddSharedModel } from "../helpers/juju-helpers";
 
-test.beforeAll(async ({ jujuHelpers }) => {
-  await jujuHelpers.jujuLogin();
-  await jujuHelpers.addModel("foo");
-  await jujuHelpers.addSharedModel("bar", "John-Doe");
-  await jujuHelpers.adminLogin();
-});
-
-test.afterAll(async ({ jujuHelpers }) => {
-  await jujuHelpers.cleanup();
+test.beforeAll(async ({ runActions }) => {
+  await runActions([
+    new AddModel("foo"),
+    new AddSharedModel("John-Doe", "bar"),
+  ]);
+  // TODO: Handle auth
+  // await jujuHelpers.jujuLogin();
+  // await jujuHelpers.adminLogin();
 });
 
 test("List created and shared models", async ({ page, authHelpers }) => {

@@ -4,10 +4,74 @@ import { exec } from "utils/exec";
 
 import {
   type Resource,
-  CloudAccessTypes,
+  CloudAccessType,
   ModelAccessTypes,
   ResourceType,
 } from "../fixtures/setup";
+
+import { Action, runActions } from "./action";
+import { JujuObject, ModelGrantPermission, UserStore } from "./user";
+
+export class AddModel extends Action {
+  constructor(private name: string) {
+    super();
+  }
+
+  async run() {
+    await exec(`juju add-model '${this.name}'`);
+  }
+
+  async rollback() {
+    await exec(`juju destroy-model '${this.name}' --force --no-prompt`);
+  }
+}
+
+export class GrantCloud extends Action {
+  constructor(
+    private username: string,
+    private accessType: CloudAccessType,
+    private cloudName: string = process.env.PROVIDER as string,
+  ) {
+    super();
+  }
+
+  async run() {
+    await exec(
+      `juju grant-cloud '${this.username}' '${this.accessType}' '${this.cloudName}'`,
+    );
+  }
+
+  async rollback() {
+    await exec(
+      `juju revoke-cloud '${this.username}' ${this.accessType} ${this.cloudName}`,
+    );
+  }
+}
+
+export class AddSharedModel extends Action<() => Promise<void>> {
+  constructor(
+    private username: string,
+    private modelName: string,
+  ) {
+    super();
+  }
+
+  async run() {
+    return await runActions([
+      new GrantCloud(this.username, CloudAccessType.ADD_MODEL),
+      new AddModel(this.modelName),
+      UserStore.get.grant(
+        this.username,
+        JujuObject.Model(this.modelName),
+        ModelGrantPermission.Read,
+      ),
+    ]);
+  }
+
+  async rollback(cleanup: () => Promise<void>) {
+    await cleanup();
+  }
+}
 
 export class JujuHelpers {
   private cleanupStack: Resource[];
@@ -29,7 +93,7 @@ export class JujuHelpers {
     await exec(`juju remove-user '${userName}' -y`);
   }
 
-  async revokeCloud(accessType: string | CloudAccessTypes, userName?: string) {
+  async revokeCloud(accessType: string | CloudAccessType, userName?: string) {
     await exec(
       `juju revoke-cloud '${userName}' ${accessType} ${process.env.PROVIDER}`,
     );
@@ -61,7 +125,7 @@ export class JujuHelpers {
     );
   }
 
-  async grantCloud(userName: string, accessType: CloudAccessTypes) {
+  async grantCloud(userName: string, accessType: CloudAccessType) {
     await exec(
       `juju grant-cloud '${userName}' ${accessType} ${process.env.PROVIDER}`,
     );
@@ -122,7 +186,7 @@ export class JujuHelpers {
 
   async addSharedModel(modelName: string, userName: string) {
     await this.addUser(userName);
-    await this.grantCloud(userName, CloudAccessTypes.ADD_MODEL);
+    await this.grantCloud(userName, CloudAccessType.ADD_MODEL);
     await this.jujuLogout();
     await this.jujuLogin(userName, "password2");
     await this.addCredential(userName, "password2");
