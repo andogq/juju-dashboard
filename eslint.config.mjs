@@ -1,17 +1,15 @@
+import { fixupConfigRules, fixupPluginRules } from "@eslint/compat";
+import prettier from "eslint-plugin-prettier";
+import vitest from "eslint-plugin-vitest";
+import promise from "eslint-plugin-promise";
+import reactRefresh from "eslint-plugin-react-refresh";
+import react from "eslint-plugin-react";
+import _import from "eslint-plugin-import";
+import tsParser from "@typescript-eslint/parser";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-
-import { fixupConfigRules, fixupPluginRules } from "@eslint/compat";
-import { FlatCompat } from "@eslint/eslintrc";
 import js from "@eslint/js";
-import stylistic from "@stylistic/eslint-plugin";
-import tsParser from "@typescript-eslint/parser";
-import _import from "eslint-plugin-import";
-import prettier from "eslint-plugin-prettier";
-import promise from "eslint-plugin-promise";
-import react from "eslint-plugin-react";
-import reactRefresh from "eslint-plugin-react-refresh";
-import vitest from "eslint-plugin-vitest";
+import { FlatCompat } from "@eslint/eslintrc";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,7 +40,6 @@ export default [
       "react-refresh": reactRefresh,
       react: fixupPluginRules(react),
       import: fixupPluginRules(_import),
-      "@stylistic": stylistic,
     },
     languageOptions: {
       globals: {
@@ -58,11 +55,7 @@ export default [
       sourceType: "script",
       parserOptions: {
         parser: "@typescript-eslint/parser",
-        project: [
-          "./tsconfig.json",
-          "./tsconfig.node.json",
-          "./actions/tsconfig.json",
-        ].map((project) => path.join(__dirname, project)),
+        project: "./tsconfig.json",
         ecmaFeatures: { jsx: true },
       },
     },
@@ -74,12 +67,11 @@ export default [
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-misused-promises": "error",
-      "@typescript-eslint/no-non-null-assertion": "error",
       "prefer-promise-reject-errors": "error",
       "@typescript-eslint/await-thenable": "error",
       "react/jsx-filename-extension": [1, { extensions: [".js", ".tsx"] }],
       "import/prefer-default-export": 0,
-      "import/first": ["error"],
+      "import/imports-first": ["error", "absolute-first"],
       "import/newline-after-import": "error",
       "import/order": [
         "error",
@@ -103,13 +95,6 @@ export default [
       "no-case-declarations": 0,
       "no-constant-condition": ["error", { checkLoops: false }],
       "prefer-destructuring": 0,
-      "one-var": ["error", "never"],
-      "id-length": [
-        "error",
-        { exceptions: ["_", "i", "j", "x", "y"], properties: "never" },
-      ],
-      camelcase: ["error", { properties: "never" }],
-      "@stylistic/no-multiple-empty-lines": ["error", { max: 1 }],
       "react/no-unescaped-entities": 0,
       "react/display-name": 0,
       "@typescript-eslint/no-duplicate-enum-values": 0,

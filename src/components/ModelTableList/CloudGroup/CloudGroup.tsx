@@ -12,12 +12,13 @@ import {
 } from "store/juju/selectors";
 import type { Filters } from "store/juju/utils/models";
 import {
+  canAdministerModel,
   extractOwnerName,
   getModelStatusGroupData,
 } from "store/juju/utils/models";
 import { useAppSelector } from "store/store";
 
-import AccessColumn from "../AccessColumn/AccessColumn";
+import AccessButton from "../AccessButton/AccessButton";
 import ModelSummary from "../ModelSummary";
 import {
   generateTableHeaders,
@@ -117,14 +118,20 @@ export default function CloudGroup({ filters }: Props) {
           {
             "data-testid": "column-updated",
             content: (
-              <AccessColumn
-                modelName={model?.info?.name}
-                activeUser={activeUser}
-              >
-                {lastUpdated}
-              </AccessColumn>
+              <>
+                {model?.info
+                  ? canAdministerModel(activeUser, model.info.users) && (
+                      <AccessButton modelName={model.info.name} />
+                    )
+                  : null}
+                <span className="model-access-alt">{lastUpdated}</span>
+              </>
             ),
-            className: "u-align--right lrg-screen-access-cell",
+            className: `u-align--right lrg-screen-access-cell ${
+              canAdministerModel(activeUser, model?.info?.users)
+                ? "has-permission"
+                : ""
+            }`,
           },
         ],
         sortData: {

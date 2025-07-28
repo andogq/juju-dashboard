@@ -18,11 +18,9 @@ import { JIMMRelation } from "juju/jimm/JIMMV4";
 import { DEFAULT_AUDIT_EVENTS_LIMIT } from "store/juju/slice";
 import type {
   AuditEventsState,
-  CommandHistory,
   Controller,
   ControllerLocation,
   CrossModelQueryState,
-  HistoryItem,
   JujuState,
   ModelData,
   ModelFeatures,
@@ -30,7 +28,6 @@ import type {
   ModelListInfo,
   ModelSecrets,
   ReBACAllowed,
-  ReBACRelationship,
   ReBACState,
   SecretsState,
 } from "store/juju/types";
@@ -40,10 +37,10 @@ import { modelStatusInfoFactory, detailedStatusFactory } from "./ClientV6";
 import { modelSLAInfoFactory } from "./ModelManagerV9";
 
 function generateUUID() {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
-    const num = (Math.random() * 16) | 0;
-    const value = char === "x" ? num : (num & 0x3) | 0x8;
-    return value.toString(16);
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0,
+      v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
   });
 }
 
@@ -247,14 +244,6 @@ export const relationshipTupleFactory = Factory.define<RelationshipTuple>(
   }),
 );
 
-export const partialRelationshipTupleFactory = Factory.define<
-  Partial<RelationshipTuple>
->(() => ({
-  object: "user-eggman@external",
-  relation: JIMMRelation.MEMBER,
-  target_object: "admins",
-}));
-
 export const rebacAllowedFactory = Factory.define<ReBACAllowed>(() => ({
   errors: null,
   loaded: false,
@@ -262,31 +251,13 @@ export const rebacAllowedFactory = Factory.define<ReBACAllowed>(() => ({
   tuple: relationshipTupleFactory.build(),
 }));
 
-export const rebacRelationshipFactory = Factory.define<ReBACRelationship>(
-  () => ({
-    errors: null,
-    loaded: false,
-    loading: false,
-    requestId: "rel123",
-  }),
-);
-
 export const rebacState = Factory.define<ReBACState>(() => ({
   allowed: [],
-  relationships: [],
 }));
-
-export const commandHistoryItem = Factory.define<HistoryItem>(() => ({
-  command: "status",
-  messages: [],
-}));
-
-export const commandHistoryState = Factory.define<CommandHistory>(() => ({}));
 
 export const jujuStateFactory = Factory.define<JujuState>(() => ({
   auditEvents: auditEventsStateFactory.build(),
   crossModelQuery: crossModelQueryStateFactory.build(),
-  commandHistory: commandHistoryState.build(),
   controllers: null,
   models: {},
   modelsLoaded: false,

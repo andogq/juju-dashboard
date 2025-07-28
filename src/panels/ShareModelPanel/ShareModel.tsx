@@ -137,8 +137,8 @@ export default function ShareModel() {
         }),
       );
     } catch (error) {
-      reactHotToast.custom((toast: ToastInstance) => (
-        <ToastCard toastInstance={toast} type="negative">
+      reactHotToast.custom((t: ToastInstance) => (
+        <ToastCard toastInstance={t} type="negative">
           {typeof error === "string"
             ? error
             : "Unable to update model permissions"}
@@ -173,8 +173,8 @@ export default function ShareModel() {
       error = null;
     }
 
-    reactHotToast.custom((toast: ToastInstance) => (
-      <ToastCard toastInstance={toast} type={error ? "negative" : "positive"}>
+    reactHotToast.custom((t: ToastInstance) => (
+      <ToastCard toastInstance={t} type={error ? "negative" : "positive"}>
         {error ?? (
           <>
             Permissions for <strong>{username}</strong> have been changed to{" "}
@@ -198,9 +198,9 @@ export default function ShareModel() {
       "read",
     );
 
-    reactHotToast.custom((toast: ToastInstance) => (
+    reactHotToast.custom((t: ToastInstance) => (
       <ToastCard
-        toastInstance={toast}
+        toastInstance={t}
         type="positive"
         undo={() => {
           const permissionTo = usersAccess?.[username];
@@ -223,8 +223,8 @@ export default function ShareModel() {
     resetForm: () => void,
   ) => {
     if (userAlreadyHasAccess(values.username, users)) {
-      reactHotToast.custom((toast: ToastInstance) => (
-        <ToastCard toastInstance={toast} type="negative">
+      reactHotToast.custom((t: ToastInstance) => (
+        <ToastCard toastInstance={t} type="negative">
           <strong>{values.username}</strong> already has access to this model.
         </ToastCard>
       ));
@@ -243,15 +243,15 @@ export default function ShareModel() {
 
       const error = response?.results?.[0]?.error?.message;
       if (error) {
-        reactHotToast.custom((toast: ToastInstance) => (
-          <ToastCard toastInstance={toast} type="negative">
+        reactHotToast.custom((t: ToastInstance) => (
+          <ToastCard toastInstance={t} type="negative">
             {error}
           </ToastCard>
         ));
       } else if (response) {
         resetForm();
-        reactHotToast.custom((toast: ToastInstance) => (
-          <ToastCard toastInstance={toast} type="positive">
+        reactHotToast.custom((t: ToastInstance) => (
+          <ToastCard toastInstance={t} type="positive">
             <strong>{values.username}</strong> now has access to this model.
           </ToastCard>
         ));

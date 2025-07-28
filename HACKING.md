@@ -41,7 +41,6 @@ contribute and what kinds of contributions are welcome.
     - [Forward ports](#forward-ports)
     - [Set up Juju Dashboard](#set-up-juju-dashboard)
     - [Restarting JIMM](#restarting-jimm)
-    - [Adding users](#adding-users)
   - [Self signed certificates](#self-signed-certificates)
   - [Juju on M1 Macs](#juju-on-m1-macs)
 - [Building the Docker image](#building-the-docker-image)
@@ -53,7 +52,7 @@ contribute and what kinds of contributions are welcome.
 ## Setting up the dashboard for development
 
 To get started working on the dashboard you will need to set up a local
-development environment and you will also need access to a Juju controller (JAAS may be
+development environement and you will also need access to a Juju controller (JAAS may be
 sufficient to get started).
 
 Once set up you might like to take a look at our [codebase overview and development guidelines](#codebase-and-development-guidelines).
@@ -687,26 +686,6 @@ Each time you start the multipass container you need to do the following:
 2. Recreate the JIMM environment with `make qa-lxd`.
 3. Now you can start the dashboard as normal.
 
-#### Adding users
-
-The QA deployment uses Keycloak to manage users. The deployment includes a web
-UI which can be found at http://keycloak.localhost:8082/.
-
-Log in using `jimm` and `jimm` and go to the
-[jimm](http://keycloak.localhost:8082/admin/master/console/#/jimm/) realm
-(switch realms using the dropdown at the top of the sidebar).
-
-Go to [Users](http://keycloak.localhost:8082/admin/master/console/#/jimm/users) and then [Add user](http://keycloak.localhost:8082/admin/master/console/#/jimm/users/add-user).
-
-Fill in the username and email, set 'Email verified' to 'yes' and submit the
-form.
-
-On the user details page click on the 'Credentials' tab and set a password.
-
-You can now give the user access in all the normal ways such as `juju
-grant-cloud [user@email] add-model localhost` and you can log in as the user with `juju
-login` and enter the details you set above.
-
 ### Self signed certificates
 
 The Juju controller uses a self-signed certificate for the API. To allow your
@@ -754,11 +733,11 @@ an amd64 machine for testing._
 ## Building the Docker image
 
 The Docker image is used by the [Juju Dashboard Kubernetes
-charm](https://charmhub.io/juju-dashboard-k8s) and is uploaded as a
+charm](https://github.com/canonical/juju-dashboard-charm) and is uploaded as a
 [resource in
 Charmhub](https://charmhub.io/juju-dashboard-k8s/resources/dashboard-image).
-There is a full guide for building the Docker image and Kubernetes charm
-[here](/docs/building-charms.md#building-and-testing-the-k8s-charm)
+There is a full guide for building the Docker image and Kubernetes charm in the
+[juju-dashboard-charm](https://github.com/canonical/juju-dashboard-charm#building-and-testing-the-k8s-charm)
 repo.
 
 The Dockerfile is also used by the PR demo service which builds a Docker image
@@ -794,7 +773,8 @@ apps are not mutually exclusive._
 
 Charms that are on your local filesystem can be built and deployed to a model.
 In this example we will use the Postgresql charm, but this process can also be
-used for the [dashboard charms](/charms).
+used for the [dashboard
+charms](https://github.com/canonical/juju-dashboard-charm).
 
 First, get a copy of the code:
 

@@ -7,10 +7,10 @@ import EntityInfo from "components/EntityInfo";
 import InfoPanel from "components/InfoPanel";
 import type { EntityDetailsRoute } from "components/Routes";
 import useCanConfigureModel from "hooks/useCanConfigureModel";
-import useModelAccess from "hooks/useModelAccess";
 import useModelStatus from "hooks/useModelStatus";
 import { useQueryParams } from "hooks/useQueryParams";
 import {
+  getModelAccess,
   getModelApplications,
   getModelInfo,
   getModelMachines,
@@ -33,7 +33,6 @@ import {
   generateOffersRows,
   generateRelationRows,
 } from "tables/tableRows";
-import { externalURLs } from "urls";
 
 import ApplicationsTab from "./ApplicationsTab";
 import Logs from "./Logs";
@@ -97,7 +96,6 @@ const Model = () => {
     getCanListSecrets(state, modelUUID),
   );
   const canConfigureModel = useCanConfigureModel();
-  const modelAccess = useModelAccess(modelUUID);
 
   const machinesTableRows = useMemo(() => {
     return modelName && userName
@@ -130,6 +128,9 @@ const Model = () => {
   const credential = useAppSelector((state) =>
     getModelCredential(state, modelUUID),
   );
+  const modelAccess = useAppSelector((state) =>
+    getModelAccess(state, modelUUID),
+  );
 
   return (
     <>
@@ -149,7 +150,7 @@ const Model = () => {
         {modelInfoData && (
           <EntityInfo
             data={{
-              access: modelAccess || "unknown",
+              access: modelAccess ?? "Unknown",
               controller: modelInfoData.type,
               "Cloud/Region": generateCloudAndRegion(
                 modelInfoData["cloud"],
@@ -176,7 +177,10 @@ const Model = () => {
           ) : (
             <span data-testid="no-machines-msg">
               There are no machines in this model -{" "}
-              <a className="p-link--external" href={externalURLs.machine}>
+              <a
+                className="p-link--external"
+                href="https://juju.is/docs/olm/machines"
+              >
                 learn more about machines
               </a>
             </span>
@@ -233,7 +237,7 @@ const Model = () => {
                 There are no integrations associated with this model -{" "}
                 <a
                   className="p-link--external"
-                  href="https://documentation.ubuntu.com/juju/latest/reference/relation/"
+                  href="https://juju.is/integration"
                 >
                   learn more about integration
                 </a>

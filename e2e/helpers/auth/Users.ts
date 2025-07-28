@@ -6,7 +6,6 @@ import type { Action } from "../action";
 import { CreateOIDCUser, CreateCandidUser, CreateLocalUser } from "./backends";
 
 import type { AuthImplementation } from ".";
-import { CreateKeycloakOIDCUser } from "./backends/Keycloak";
 
 /**
  * Facilitates interactions with an `AuthImplementation.`
@@ -27,10 +26,7 @@ export class Users {
         this.CreateUser = CreateCandidUser;
         break;
       case "oidc":
-        this.CreateUser =
-          process.env.AUTH_VARIANT == "keycloak"
-            ? CreateKeycloakOIDCUser
-            : CreateOIDCUser;
+        this.CreateUser = CreateOIDCUser;
         break;
       default:
         throw new Error(
@@ -44,18 +40,8 @@ export class Users {
    *
    * This user will not be created by the auth implementation.
    */
-  createUserInstance(
-    username: string,
-    password: string,
-    identityUsername?: string | null,
-    identityPassword?: string | null,
-  ): User {
-    return new this.CreateUser(
-      username,
-      password,
-      identityUsername,
-      identityPassword,
-    ).result();
+  createUserInstance(username: string, password: string): User {
+    return new this.CreateUser(username, password).result();
   }
 
   /**

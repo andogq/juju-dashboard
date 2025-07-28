@@ -5,7 +5,6 @@ import {
 } from "@canonical/react-components";
 import type { SearchAndFilterChip } from "@canonical/react-components/dist/components/SearchAndFilter/types";
 import type { ReactNode } from "react";
-import { useId } from "react";
 import { Link } from "react-router";
 
 import ChipGroup from "components/ChipGroup";
@@ -15,10 +14,7 @@ import SegmentedControl from "components/SegmentedControl";
 import useModelAttributes from "hooks/useModelAttributes";
 import { useQueryParams } from "hooks/useQueryParams";
 import useWindowTitle from "hooks/useWindowTitle";
-import { useCheckRelations } from "juju/api-hooks/permissions";
-import { JIMMRelation } from "juju/jimm/JIMMV4";
-import MainContent from "layout/MainContent";
-import { getControllerUserTag } from "store/general/selectors";
+import BaseLayout from "layout/BaseLayout";
 import {
   getGroupedModelStatusCounts,
   getModelData,
@@ -29,7 +25,7 @@ import {
 import { pluralize } from "store/juju/utils/models";
 import { useAppSelector } from "store/store";
 import type { ModelsGroupedBy } from "urls";
-import urls, { externalURLs } from "urls";
+import urls from "urls";
 
 import { Label, TestId } from "./types";
 
@@ -66,17 +62,6 @@ export default function Models() {
   const modelData = useAppSelector(getModelData);
   const { clouds, regions, owners, credentials } =
     useModelAttributes(modelData);
-  const controllerUser = useAppSelector(getControllerUserTag);
-  const requestId = useId();
-  const relations =
-    controllerUser && modelData && Object.keys(modelData).length > 0
-      ? Object.keys(modelData).map((modelUUID) => ({
-          object: controllerUser,
-          relation: JIMMRelation.ADMINISTRATOR,
-          target_object: `model-${modelUUID}`,
-        }))
-      : null;
-  useCheckRelations(requestId, relations, true);
 
   // Generate chips from available model data
   const generateChips = (lead: string, values: string[]) => {
@@ -118,9 +103,15 @@ export default function Models() {
         <div className="models">
           <h3>{Label.NOT_FOUND}</h3>
           <p>
-            Learn about <a href={externalURLs.addModel}>adding models</a> or{" "}
-            <a href={externalURLs.modelAccess}>granting access</a> to existing
-            models.
+            Learn about{" "}
+            <a href="https://juju.is/docs/olm/manage-models#heading--add-a-model">
+              adding models
+            </a>{" "}
+            or{" "}
+            <a href="https://juju.is/docs/olm/manage-users#heading--model-access">
+              granting access
+            </a>{" "}
+            to existing models.
           </p>
         </div>
       );
@@ -135,7 +126,7 @@ export default function Models() {
   }
 
   return (
-    <MainContent
+    <BaseLayout
       data-testid={TestId.COMPONENT}
       title={
         <div className="models__header" data-disabled={modelCount === 0}>
@@ -221,6 +212,6 @@ export default function Models() {
         </Notification>
       ) : null}
       {content}
-    </MainContent>
+    </BaseLayout>
   );
 }

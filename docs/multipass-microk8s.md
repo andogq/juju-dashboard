@@ -12,7 +12,7 @@ issues:
   multipass](https://microk8s.io/docs/install-multipass)
 - [How to use MicroK8s with Juju](https://juju.is/docs/olm/microk8s)
 - [Deploy Juju Dashboard](/README.md#deploy)
-- [Building and Testing the k8s charm](/docs/building-charms.md#building-and-testing-the-k8s-charm)
+- [Building and Testing the k8s charm](https://github.com/canonical/juju-dashboard-charm#building-and-testing-the-k8s-charm)
 
 To begin, launch and enter into a new Multipass container:
 
@@ -109,17 +109,32 @@ git clone https://github.com/canonical/juju-dashboard.git
 cd juju-dashboard
 ```
 
-Run the script to build the image and the charm:
+Build and import the Docker image:
 
 ```shell
-lxd init --auto
-./charms/k8s-charm/build.sh
+DOCKER_BUILDKIT=1 docker build -t juju-dashboard .
+docker image save juju-dashboard | microk8s ctr image import -
 ```
 
-Import the Docker image:
+Now get the dashboard charm:
 
 ```shell
-docker image save juju-dashboard | microk8s ctr image import -
+cd ~
+git clone https://github.com/canonical/juju-dashboard-charm.git
+cd juju-dashboard-charm/k8s-charm/
+```
+
+Install Charmcraft:
+
+```shell
+sudo snap install charmcraft --classic
+lxd init --auto
+```
+
+Build the charm:
+
+```shell
+charmcraft pack
 ```
 
 If you're on ARM (e.g. an M1 Mac) then run:
@@ -196,7 +211,7 @@ juju deploy juju-dashboard-k8s dashboard
 If you deployed from a locally built charm then run:
 
 ```shell
-cd ./charms/k8s-charm/
+cd juju-dashboard-charm/k8s-charm/
 docker image inspect juju-dashboard | grep "Id"
 juju deploy --resource dashboard-image=[docker-image-id] ./juju-dashboard*.charm dashboard
 ```

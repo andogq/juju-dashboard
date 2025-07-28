@@ -97,26 +97,13 @@ export type ReBACAllowed = GenericState<string> & {
   allowed?: boolean | null;
 };
 
-export type ReBACRelationship = GenericState<string[]> & {
-  requestId: string;
-};
-
 export type ReBACState = {
   allowed: ReBACAllowed[];
-  relationships: ReBACRelationship[];
 };
-
-export type HistoryItem = {
-  command: string;
-  messages: string[];
-};
-
-export type CommandHistory = Record<string, HistoryItem[]>;
 
 export type JujuState = {
   auditEvents: AuditEventsState;
   crossModelQuery: CrossModelQueryState;
-  commandHistory: CommandHistory;
   controllers: Controllers | null;
   models: ModelsList;
   modelsError: string | null;

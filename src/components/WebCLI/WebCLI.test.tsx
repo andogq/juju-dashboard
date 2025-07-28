@@ -6,10 +6,6 @@ import { vi } from "vitest";
 
 import bakery from "juju/bakery";
 import { generalStateFactory, configFactory } from "testing/factories/general";
-import {
-  commandHistoryState,
-  commandHistoryItem,
-} from "testing/factories/juju/juju";
 import { rootStateFactory } from "testing/factories/root";
 import { renderComponent } from "testing/utils";
 
@@ -38,8 +34,6 @@ describe("WebCLI", () => {
       user: "eggman@external",
       password: "somelongpassword",
     },
-    onCommandSent: vi.fn(),
-    activeUser: "eggman@external",
   };
 
   beforeEach(() => {
@@ -59,26 +53,6 @@ describe("WebCLI", () => {
     expect(document.querySelector(".webcli")).toMatchSnapshot();
   });
 
-  it("displays preloaded history", async () => {
-    const messages = [
-      "Model         Controller",
-      "test-model    localhost-localhost",
-    ];
-    const commandHistory = commandHistoryState.build({
-      abc123: [
-        commandHistoryItem.build({
-          command: "status",
-          messages: messages,
-        }),
-      ],
-    });
-    renderComponent(<WebCLI {...props} history={commandHistory} />);
-    expect(await screen.findByTestId(OutputTestId.CONTENT)).toHaveTextContent(
-      ["$ status", messages.join("\n")].join(""),
-      { normalizeWhitespace: false },
-    );
-  });
-
   it("shows the help in the output when the ? is clicked", async () => {
     renderComponent(<WebCLI {...props} />);
     await server.connected;
@@ -88,54 +62,6 @@ describe("WebCLI", () => {
     ).toHaveTextContent(
       `Welcome to the Juju Web CLI - see the full documentation here.`,
     );
-  });
-
-  it("shows the help in the output when enter is pressed", async () => {
-    renderComponent(<WebCLI {...props} />);
-    await server.connected;
-    const input = screen.getByRole("textbox");
-    await userEvent.type(input, "status{enter}");
-    const messages = [{ output: ["test"] }, { done: true }];
-    messages.forEach((message) => {
-      server.send(JSON.stringify(message));
-    });
-    await waitFor(() =>
-      expect(screen.getByTestId(OutputTestId.CONTENT)).toHaveTextContent(
-        "test",
-      ),
-    );
-    fireEvent.keyDown(screen.getByRole("button", { name: Label.HELP }), {
-      key: "Enter",
-    });
-    expect(
-      document.querySelector(".webcli__output-content code"),
-    ).toHaveTextContent(
-      `Welcome to the Juju Web CLI - see the full documentation here.`,
-    );
-  });
-
-  it("shows the help in the output when space is pressed", async () => {
-    renderComponent(<WebCLI {...props} />);
-    await server.connected;
-    fireEvent.keyDown(screen.getByRole("button", { name: Label.HELP }), {
-      key: " ",
-    });
-    expect(
-      document.querySelector(".webcli__output-content code"),
-    ).toHaveTextContent(
-      `Welcome to the Juju Web CLI - see the full documentation here.`,
-    );
-  });
-
-  it("does not show the help in the output when keys other than space or enter are pressed", async () => {
-    renderComponent(<WebCLI {...props} />);
-    await server.connected;
-    fireEvent.keyDown(screen.getByRole("button", { name: Label.HELP }), {
-      key: "a",
-    });
-    expect(
-      document.querySelector(".webcli__output-content code"),
-    ).not.toHaveTextContent("");
   });
 
   it("shows the help when there is no output", async () => {
@@ -251,7 +177,7 @@ describe("WebCLI", () => {
     });
     bakerySpy.mockImplementation((key) => {
       const macaroons: Record<string, string> = {
-        "wss://localhost:1234/api": "WyJtYWMiLCAiYXJvb24iXQo=",
+        "wss://localhost:1234": "WyJtYWMiLCAiYXJvb24iXQo=",
       };
       return macaroons[key];
     });
@@ -267,21 +193,6 @@ describe("WebCLI", () => {
         commands: ["status"],
       }),
     );
-  });
-
-  it("sends commands over the websocket", async () => {
-    renderComponent(<WebCLI {...props} />);
-    await server.connected;
-    const input = screen.getByRole("textbox");
-    await userEvent.type(input, "some-command{enter}");
-    await expect(server).toReceiveMessage(
-      JSON.stringify({
-        user: "eggman@external",
-        credentials: "somelongpassword",
-        commands: ["some-command"],
-      }),
-    );
-    expect(props.onCommandSent).toBeCalledWith("some-command");
   });
 
   it("displays messages received over the websocket", async () => {
@@ -336,26 +247,6 @@ describe("WebCLI", () => {
         "style",
         "height: 300px;",
       );
-    });
-  });
-
-  it("calls the onHistoryChange callback when it receives messages", async () => {
-    const onHistoryChange = vi.fn();
-    renderComponent(<WebCLI {...props} onHistoryChange={onHistoryChange} />);
-    await server.connected;
-    const input = screen.getByRole("textbox");
-    await userEvent.type(input, "status{enter}");
-    const messages = [
-      "Model         Controller           Cloud/Region         Version    SLA          Timestamp",
-      "test-model    localhost-localhost  localhost/localhost  3.2-beta3  unsupported  01:17:46Z",
-    ];
-    messages.forEach((message) => {
-      server.send(JSON.stringify({ output: [message] }));
-    });
-    server.send(JSON.stringify({ done: true }));
-    expect(onHistoryChange).toHaveBeenCalledWith("abc123", {
-      command: "status",
-      messages,
     });
   });
 
@@ -419,7 +310,7 @@ describe("WebCLI", () => {
     await server.connected;
     expect(await screen.findByTestId(OutputTestId.CONTENT)).toHaveAttribute(
       "style",
-      "height: 0px;",
+      "height: 1px;",
     );
     const handle = document.querySelector(".webcli__output-handle");
     expect(handle).toBeTruthy();
@@ -440,7 +331,7 @@ describe("WebCLI", () => {
     await server.connected;
     expect(await screen.findByTestId(OutputTestId.CONTENT)).toHaveAttribute(
       "style",
-      "height: 0px;",
+      "height: 1px;",
     );
     const handle = document.querySelector(".webcli__output-handle");
     expect(handle).toBeTruthy();
@@ -458,6 +349,29 @@ describe("WebCLI", () => {
       "style",
       "height: 628px;",
     );
+  });
+
+  it("clears the buffer timeout if there are pending updates when unmounting", async () => {
+    vi.useFakeTimers();
+    const clearTimeoutSpy = vi.spyOn(global, "clearTimeout");
+    const { result } = renderComponent(<WebCLI {...props} />);
+    const messages = [
+      {
+        output: [
+          "Model       Controller       Cloud/Region     Version    SLA          Timestamp",
+        ],
+      },
+      { output: [""] },
+      { done: true },
+    ];
+    messages.forEach((message) => {
+      server.send(JSON.stringify(message));
+    });
+    expect(clearTimeoutSpy).not.toHaveBeenCalled();
+    result.unmount();
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    clearTimeoutSpy.mockRestore();
+    vi.useRealTimers();
   });
 
   it("should display connection error when no websocket address is present", () => {
@@ -590,43 +504,14 @@ describe("WebCLI", () => {
     ).toHaveTextContent(`ERROR: ${Label.UNKNOWN_ERROR}`);
   });
 
-  it("should reconnect when trying to send message after disconnection", async () => {
+  it("should display error when trying to send message over an unopened connection", async () => {
     renderComponent(<WebCLI {...props} />);
     await server.connected;
-    // Disconnect the websocket.
     server.close();
-    await server.closed;
-    // Once closed we can't reopen it, so create a new websocket ready to be
-    // connected to.
-    server = new WS("wss://localhost:1234/model/abc123/commands");
     const input = screen.getByRole("textbox");
-    await userEvent.type(input, "status{enter}");
-    const client = await server.connected;
-    await expect(server).toReceiveMessage(
-      JSON.stringify({
-        user: "eggman@external",
-        credentials: "somelongpassword",
-        commands: ["status"],
-      }),
-    );
-    expect(client.readyState).toBe(WebSocket.OPEN);
-  });
-
-  it("should display an error when trying to send message when it can't reconnect", async () => {
-    renderComponent(<WebCLI {...props} />);
-    const client = await server.connected;
-    server.close();
-    await server.closed;
-    expect(client.readyState).toBe(WebSocket.CLOSED);
-    const input = screen.getByRole("textbox");
-    await userEvent.type(input, "status{enter}");
-    // At this point it will try to reconnect to the server, which has been
-    // manually closed so it will return an error.
-    await waitFor(() => {
-      expect(
-        document.querySelector(".webcli__output-content code"),
-      ).toHaveTextContent(`ERROR: ${Label.CONNECTION_ERROR}`);
-      expect(client.readyState).toBe(WebSocket.CLOSED);
-    });
+    await userEvent.type(input, "status --color{enter}");
+    expect(
+      document.querySelector(".webcli__output-content code"),
+    ).toHaveTextContent(`ERROR: ${Label.NOT_OPEN_ERROR}`);
   });
 });

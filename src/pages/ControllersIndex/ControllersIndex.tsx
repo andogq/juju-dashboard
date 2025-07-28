@@ -14,7 +14,7 @@ import AuthenticationButton from "components/AuthenticationButton";
 import Status from "components/Status";
 import TruncatedTooltip from "components/TruncatedTooltip";
 import useWindowTitle from "hooks/useWindowTitle";
-import MainContent from "layout/MainContent";
+import BaseLayout from "layout/BaseLayout/BaseLayout";
 import {
   getControllerConnections,
   getLoginErrors,
@@ -27,7 +27,7 @@ import {
 } from "store/juju/selectors";
 import type { Controller } from "store/juju/types";
 import { useAppSelector } from "store/store";
-import urls, { externalURLs } from "urls";
+import urls from "urls";
 import { breakLines } from "utils";
 
 import ControllersOverview from "./ControllerOverview";
@@ -153,24 +153,21 @@ const ControllersIndex = () => {
     return column;
   };
 
-  const generateRow = (
-    controller: AnnotatedController,
-    authenticated: boolean,
-  ) => {
+  const generateRow = (c: AnnotatedController, authenticated: boolean) => {
     let cloud = "unknown";
-    if ("cloud-tag" in controller && controller["cloud-tag"]) {
-      cloud = controller["cloud-tag"];
-    } else if ("location" in controller && controller.location?.cloud) {
-      cloud = controller.location.cloud;
+    if ("cloud-tag" in c && c["cloud-tag"]) {
+      cloud = c["cloud-tag"];
+    } else if ("location" in c && c.location?.cloud) {
+      cloud = c.location.cloud;
     }
     let region = "unknown";
-    if ("cloud-region" in controller && controller["cloud-region"]) {
-      region = controller["cloud-region"];
-    } else if ("location" in controller && controller.location?.region) {
-      region = controller.location.region;
+    if ("cloud-region" in c && c["cloud-region"]) {
+      region = c["cloud-region"];
+    } else if ("location" in c && c.location?.region) {
+      region = c.location.region;
     }
     const cloudRegion = `${cloud}/${region}`;
-    const loginError = loginErrors?.[controller.wsControllerURL];
+    const loginError = loginErrors?.[c.wsControllerURL];
     let status = "Connected";
     let label = null;
     if (loginError) {
@@ -181,7 +178,7 @@ const ControllersIndex = () => {
       label = "Authentication required";
     }
     const columns = [
-      generatePathValue(controller),
+      generatePathValue(c),
       {
         content: (
           <Tooltip
@@ -196,21 +193,21 @@ const ControllersIndex = () => {
         ),
       },
       { content: cloudRegion },
-      { content: controller.models },
-      { content: controller.machines },
-      { content: controller.applications },
-      { content: controller.units },
+      { content: c.models },
+      { content: c.machines },
+      { content: c.applications },
+      { content: c.units },
       { content: "" },
     ];
     const version =
-      ("agent-version" in controller && controller["agent-version"]) ||
-      ("version" in controller && controller.version);
+      ("agent-version" in c && c["agent-version"]) ||
+      ("version" in c && c.version);
     if (version) {
       columns[columns.length - 1] = {
         content: (
           <>
             {version}{" "}
-            {controller.updateAvailable ? (
+            {c.updateAvailable ? (
               <Tooltip
                 message={
                   <>
@@ -218,7 +215,7 @@ const ControllersIndex = () => {
                     controller.{" "}
                     <a
                       className="p-list__link"
-                      href={externalURLs.upgradingThings}
+                      href="https://juju.is/docs/olm/upgrading"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -250,7 +247,7 @@ const ControllersIndex = () => {
     );
 
   return (
-    <MainContent
+    <BaseLayout
       data-testid={TestId.COMPONENT}
       title={
         <>
@@ -284,7 +281,7 @@ const ControllersIndex = () => {
           )}
         </div>
       </div>
-    </MainContent>
+    </BaseLayout>
   );
 };
 

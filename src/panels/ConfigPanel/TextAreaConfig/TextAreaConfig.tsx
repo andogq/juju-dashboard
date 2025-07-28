@@ -27,8 +27,8 @@ export default function TextAreaConfig({
             ref={inputRef}
             value={value ?? ""}
             onFocus={() => setSelectedConfig(config)}
-            onChange={(ev) => {
-              setNewValue(config.name, ev.target.value);
+            onChange={(e) => {
+              setNewValue(config.name, e.target.value);
             }}
           ></textarea>
           <SecretsPicker

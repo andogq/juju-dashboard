@@ -1,7 +1,6 @@
 import { test as base } from "@playwright/test";
 
 import { JujuCLI } from "../helpers/juju-cli";
-import { getEnv } from "../utils";
 
 export enum JujuEnv {
   JIMM = "jimm",
@@ -20,8 +19,6 @@ export type TestOptions = {
   admin: {
     name: string;
     password: string;
-    identityName?: string | null;
-    identityPassword?: string | null;
   };
 };
 
@@ -52,14 +49,20 @@ export type Resource = {
   owner?: string;
 };
 
+function getEnv(key: string): string {
+  if (!(key in process.env)) {
+    throw new Error(`${key} not present in environment`);
+  }
+
+  return process.env[key] as string;
+}
+
 export const test = base.extend<Fixtures>({
   testOptions: [
     {
       admin: {
         name: getEnv("ADMIN_USERNAME"),
         password: getEnv("ADMIN_PASSWORD"),
-        identityName: getEnv("ADMIN_IDENTITY_USERNAME", null),
-        identityPassword: getEnv("ADMIN_IDENTITY_PASSWORD", null),
       },
       controllerName: getEnv("CONTROLLER_NAME"),
       jujuEnv: getEnv("JUJU_ENV") as JujuEnv,

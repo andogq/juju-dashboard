@@ -1,33 +1,32 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`WebCLI > displays ansi colored content colored 1`] = `
-"$ status --colorModel       Controller       Cloud/Region     Version    SLA          Timestamp
+"
+Model       Controller       Cloud/Region     Version    SLA          Timestamp
 controller  google-us-east1  google/us-east1  2.9-beta1  unsupported  17:44:14Z
 
 Machine  State    DNS             Inst id        Series  AZ          Message
 0        started  35.190.153.209  juju-3686b9-0  focal   us-east1-b  RUNNING
-
 "
 `;
 
 exports[`WebCLI > displays messages received over the websocket 1`] = `
-"$ status --colorModel       Controller       Cloud/Region     Version    SLA          Timestamp
+"
+Model       Controller       Cloud/Region     Version    SLA          Timestamp
 controller  google-us-east1  google/us-east1  2.9-beta1  unsupported  17:44:14Z
 
 Machine  State    DNS             Inst id        Series  AZ          Message
 0        started  35.190.153.209  juju-3686b9-0  focal   us-east1-b  RUNNING
-
 "
 `;
 
 exports[`WebCLI > renders correctly 1`] = `
 <div
-  class="webcli is-dark"
-  data-testid="WebCLI"
+  class="webcli"
 >
   <div
     class="webcli__output"
-    style="height: 0px;"
+    style="height: 1px;"
   >
     <div
       aria-hidden="true"
@@ -40,7 +39,7 @@ exports[`WebCLI > renders correctly 1`] = `
     <pre
       class="webcli__output-content"
       data-testid="output-content"
-      style="height: 0px;"
+      style="height: 1px;"
     >
       <code
         data-testid="output-help"
@@ -48,7 +47,8 @@ exports[`WebCLI > renders correctly 1`] = `
         Welcome to the Juju Web CLI - see the
          
         <a
-          href="https://documentation.ubuntu.com/juju/latest/reference/juju-web-cli/"
+          class="p-link--inverted"
+          href="https://juju.is/docs/olm/the-juju-web-cli"
           rel="noreferrer"
           target="_blank"
         >
@@ -68,7 +68,6 @@ exports[`WebCLI > renders correctly 1`] = `
     </div>
     <form>
       <input
-        aria-label="enter command"
         autocapitalize="none"
         autocomplete="off"
         autocorrect="off"
@@ -83,7 +82,6 @@ exports[`WebCLI > renders correctly 1`] = `
       class="webcli__input-help"
     >
       <i
-        aria-label="Display help"
         class="p-icon--help is-light"
         role="button"
         tabindex="0"

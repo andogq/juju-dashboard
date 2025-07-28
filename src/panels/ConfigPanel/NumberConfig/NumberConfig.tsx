@@ -22,8 +22,8 @@ const NumberConfig = ({
           type="number"
           value={value}
           onFocus={() => setSelectedConfig(config)}
-          onChange={(ev) => {
-            setNewValue(config.name, ev.target.value);
+          onChange={(e) => {
+            setNewValue(config.name, e.target.value);
           }}
         />
       )}

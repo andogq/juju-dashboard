@@ -32,7 +32,6 @@ import {
   isReBACEnabled,
   getControllerUserTag,
   getLoginLoading,
-  getIsJIMM,
 } from "./selectors";
 
 describe("selectors", () => {
@@ -56,20 +55,6 @@ describe("selectors", () => {
           general: generalStateFactory.build({
             config: configFactory.build({
               isJuju: true,
-            }),
-          }),
-        }),
-      ),
-    ).toStrictEqual(true);
-  });
-
-  it("getIsJIMM", () => {
-    expect(
-      getIsJIMM(
-        rootStateFactory.build({
-          general: generalStateFactory.build({
-            config: configFactory.build({
-              isJuju: false,
             }),
           }),
         }),

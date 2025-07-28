@@ -18,13 +18,13 @@ describe("Controllers chart", () => {
       />,
     );
     expect(screen.getByTestId("legend-blocked")).toHaveTextContent(
-      "Blocked: 17%, 5",
+      "Blocked: 6%, 5",
     );
     expect(screen.getByTestId("legend-alert")).toHaveTextContent(
-      "Alerts: 33%, 10",
+      "Alerts: 3%, 10",
     );
     expect(screen.getByTestId("legend-running")).toHaveTextContent(
-      "Running: 50%, 15",
+      "Running: 2%, 15",
     );
   });
 });

@@ -9,7 +9,7 @@ import CheckPermissions from "components/CheckPermissions";
 import useLogout from "hooks/useLogout";
 import { useIsJIMMAdmin } from "juju/api-hooks/permissions";
 import { endpoints } from "juju/jimm/api";
-import MainContent from "layout/MainContent";
+import BaseLayout from "layout/BaseLayout/BaseLayout";
 import { isReBACEnabled } from "store/general/selectors";
 import { useAppSelector } from "store/store";
 import { rebacURLS } from "urls";
@@ -70,7 +70,7 @@ const Permissions = (): JSX.Element => {
       data-testid={TestId.COMPONENT}
       loading={loading}
     >
-      <MainContent
+      <BaseLayout
         data-testid={TestId.COMPONENT}
         secondaryNav={{
           title: "Permissions",
@@ -83,7 +83,7 @@ const Permissions = (): JSX.Element => {
         }}
       >
         <ReBACAdmin axiosInstance={axiosInstance} asidePanelId="app-layout" />
-      </MainContent>
+      </BaseLayout>
     </CheckPermissions>
   );
 };

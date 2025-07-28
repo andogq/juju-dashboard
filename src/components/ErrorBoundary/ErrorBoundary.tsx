@@ -89,7 +89,7 @@ export default class ErrorBoundary extends Component<Props, State> {
           <p>
             Further debugging can be done{" "}
             <a
-              href={externalURLs.troubleshootDeployment}
+              href="https://juju.is/docs/olm/troubleshooting"
               rel="noopener noreferrer"
               target="_blank"
             >

@@ -19,6 +19,9 @@ test.describe("Web CLI", () => {
   });
 
   test("Web CLI", async ({ page, jujuCLI }) => {
+    // Skipping candid auth as web CLI websocket can't be authenticated with it.
+    test.skip(process.env.AUTH_MODE === "candid");
+
     const { user, model } = await actions.prepare((add) => {
       const user = add(jujuCLI.createUser());
       const model = add(new AddModel(user));

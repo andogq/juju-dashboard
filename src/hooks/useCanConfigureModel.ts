@@ -11,7 +11,7 @@ import { useAppSelector } from "store/store";
 
 const useCheckJujuPermissions = (modelUUID: string, enabled?: boolean) => {
   const activeUser = useAppSelector((state) => getActiveUser(state, modelUUID));
-  const modelStatusData = useModelStatus(modelUUID);
+  const modelStatusData = useModelStatus();
   return (
     enabled &&
     !!activeUser &&
@@ -38,15 +38,9 @@ const useCheckJIMMPermissions = (
   return permitted;
 };
 
-const useCanConfigureModel = (
-  cleanup?: boolean,
-  modelName?: string | null,
-  userName?: string | null,
-) => {
+const useCanConfigureModel = (cleanup?: boolean) => {
   const isJuju = useAppSelector(getIsJuju);
-  const params = useParams<EntityDetailsRoute>();
-  userName = userName || params.userName;
-  modelName = modelName || params.modelName;
+  const { userName, modelName } = useParams<EntityDetailsRoute>();
   const modelUUID = useAppSelector((state) =>
     getModelUUIDFromList(state, modelName, userName),
   );

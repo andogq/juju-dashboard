@@ -25,7 +25,7 @@ import {
   generateLocalApplicationRows,
   generateMachineRows,
 } from "tables/tableRows";
-import urls, { externalURLs } from "urls";
+import urls from "urls";
 
 import { Label } from "./types";
 
@@ -104,7 +104,10 @@ export default function Unit() {
               Could not find a unit with ID "{unitId}" for the user "{userName}
               ". If this is a model that belongs to another user then check that
               you have been{" "}
-              <a href={externalURLs.manageAccess}>granted access</a>.
+              <a href="https://canonical-juju.readthedocs-hosted.com/en/latest/user/howto/manage-users/#manage-access-at-the-controller-model-application-or-offer-level">
+                granted access
+              </a>
+              .
             </p>
             <p>
               <Link

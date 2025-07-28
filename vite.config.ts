@@ -1,10 +1,9 @@
-import fs from "node:fs/promises";
-
-import react from "@vitejs/plugin-react-swc";
 import { defineConfig, loadEnv } from "vite";
+import react from "@vitejs/plugin-react-swc";
+import tsconfigPaths from "vite-tsconfig-paths";
 import { createHtmlPlugin } from "vite-plugin-html";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
-import tsconfigPaths from "vite-tsconfig-paths";
+import fs from "node:fs/promises";
 
 /// <reference types="vitest" />
 export default defineConfig(({ mode }) => {

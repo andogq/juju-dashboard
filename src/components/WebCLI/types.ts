@@ -1,15 +1,10 @@
 export enum Label {
-  COMMAND = "enter command",
   CONNECTION_ERROR = "Unable to connect to the model.",
   AUTHENTICATION_ERROR = "Unable to authenticate.",
+  NOT_OPEN_ERROR = "WebSocket connection is not open.",
   UNKNOWN_ERROR = "Unknown error.",
-  HELP = "Display help",
 }
 
 export enum Fields {
   COMMAND = "command",
-}
-
-export enum TestId {
-  COMPONENT = "WebCLI",
 }

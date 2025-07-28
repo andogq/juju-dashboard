@@ -7,7 +7,6 @@ import { auditEventFactory } from "testing/factories/juju/jimm";
 import {
   listSecretResultFactory,
   relationshipTupleFactory,
-  commandHistoryItem,
 } from "testing/factories/juju/juju";
 
 import { actions } from "./slice";
@@ -464,67 +463,6 @@ describe("actions", () => {
     expect(actions.removeCheckRelation({ tuple })).toStrictEqual({
       type: "juju/removeCheckRelation",
       payload: { tuple },
-    });
-  });
-
-  it("checkRelations", () => {
-    const requestId = "123456";
-    const tuples = [relationshipTupleFactory.build()];
-    expect(
-      actions.checkRelations({
-        requestId,
-        tuples,
-        wsControllerURL: "wss://test.example.com",
-      }),
-    ).toStrictEqual({
-      type: "juju/checkRelations",
-      payload: {
-        requestId,
-        tuples,
-        wsControllerURL: "wss://test.example.com",
-      },
-    });
-  });
-
-  it("addCheckRelations", () => {
-    const tuples = [relationshipTupleFactory.build()];
-    const permissions = [{ allowed: true }];
-    const requestId = "123456";
-    expect(
-      actions.addCheckRelations({ requestId, tuples, permissions }),
-    ).toStrictEqual({
-      type: "juju/addCheckRelations",
-      payload: { tuples, permissions, requestId },
-    });
-  });
-
-  it("addCheckRelationsErrors", () => {
-    const tuples = [relationshipTupleFactory.build()];
-    const requestId = "123456";
-    expect(
-      actions.addCheckRelationsErrors({ requestId, tuples, errors: "oops!" }),
-    ).toStrictEqual({
-      type: "juju/addCheckRelationsErrors",
-      payload: { requestId, tuples, errors: "oops!" },
-    });
-  });
-
-  it("removeCheckRelations", () => {
-    const requestId = "123456";
-    expect(actions.removeCheckRelations({ requestId })).toStrictEqual({
-      type: "juju/removeCheckRelations",
-      payload: { requestId },
-    });
-  });
-
-  it("removeCheckRelations", () => {
-    const payload = {
-      modelUUID: "abc123",
-      historyItem: commandHistoryItem.build({ command: "status" }),
-    };
-    expect(actions.addCommandHistory(payload)).toStrictEqual({
-      type: "juju/addCommandHistory",
-      payload,
     });
   });
 });

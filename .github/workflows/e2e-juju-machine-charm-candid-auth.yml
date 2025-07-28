@@ -14,7 +14,7 @@ permissions: read-all
 jobs:
   test:
     name: Run tests
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         node-version: [22.x]
@@ -37,6 +37,7 @@ jobs:
           bundled-dashboard: ${{ steps.config.outputs.machine-bundled-dashboard }}
           dashboard-ref: ${{ steps.config.outputs.repo-ref }}
           charm-channel: ${{ steps.config.outputs.dashboard-charm-channel }}
+          dashboard-charm-ref: ${{ steps.config.outputs.dashboard-charm-ref }}
       - name: Run tests
         uses: ./.github/actions/run-playwright
         with:

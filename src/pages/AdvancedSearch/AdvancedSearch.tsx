@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 
 import CheckPermissions from "components/CheckPermissions";
-import MainContent from "layout/MainContent";
+import BaseLayout from "layout/BaseLayout/BaseLayout";
 import { isCrossModelQueriesEnabled } from "store/general/selectors";
 import { useAppSelector } from "store/store";
 
@@ -17,11 +17,11 @@ const AdvancedSearch = (): JSX.Element => {
       allowed={crossModelQueriesEnabled}
       data-testid={TestId.COMPONENT}
     >
-      <MainContent data-testid={TestId.COMPONENT} title={Label.TITLE}>
+      <BaseLayout data-testid={TestId.COMPONENT} title={Label.TITLE}>
         <SearchForm />
         <ErrorsBlock />
         <ResultsBlock />
-      </MainContent>
+      </BaseLayout>
     </CheckPermissions>
   );
 };

@@ -1,6 +1,5 @@
 node_modules/
 build/
-*.charm
 .docker-project
 .yarn.canonical-webteam-juju-dashboard*
 yarn-error.log
@@ -12,7 +11,6 @@ coverage/
 /.eslintcache
 .vscode/
 pkg/
-/.idea/
 public/config.local.js
 .nfs.*
 
@@ -25,11 +23,6 @@ public/config.local.js
 
 .env.local
 .env.*.local
-venv
-.venv
-
-__pycache__
-*.py[cod]
 
 # Playwright
 /test-results/

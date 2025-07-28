@@ -1,11 +1,7 @@
 import { screen, within } from "@testing-library/react";
 
 import type { RootState } from "store/store";
-import {
-  configFactory,
-  generalStateFactory,
-  authUserInfoFactory,
-} from "testing/factories/general";
+import { configFactory, generalStateFactory } from "testing/factories/general";
 import { modelStatusInfoFactory } from "testing/factories/juju/ClientV6";
 import { modelUserInfoFactory } from "testing/factories/juju/ModelManagerV9";
 import {
@@ -28,14 +24,12 @@ describe("CloudGroup", () => {
         modelData: {
           abc123: modelDataFactory.build({
             info: modelDataInfoFactory.build({
-              name: "test1",
               "controller-uuid": "controller123",
               "cloud-tag": "cloud-aws",
               uuid: "abc123",
             }),
             model: modelStatusInfoFactory.build({
               "cloud-tag": "cloud-aws",
-              name: "test1",
             }),
             uuid: "abc123",
           }),
@@ -59,7 +53,6 @@ describe("CloudGroup", () => {
         models: {
           abc123: modelListInfoFactory.build({
             uuid: "abc123",
-            name: "test1",
             wsControllerURL: "wss://jimm.jujucharms.com/api",
           }),
         },
@@ -99,16 +92,18 @@ describe("CloudGroup", () => {
       }),
       controllerConnections: {
         "wss://jimm.jujucharms.com/api": {
-          user: authUserInfoFactory.build({
+          user: {
+            "display-name": "eggman",
             identity: "user-eggman@external",
-          }),
+            "controller-access": "",
+            "model-access": "",
+          },
         },
       },
     });
     state.juju.modelData.abc123.info = modelDataInfoFactory.build({
       "cloud-tag": "cloud-aws",
       "controller-uuid": "controller123",
-      name: "test1",
       users: [
         modelUserInfoFactory.build({
           user: "eggman@external",

@@ -1,18 +1,8 @@
-import type { ActionCreatorWithPayload } from "@reduxjs/toolkit";
-import { useEffect, useRef } from "react";
-import { useDispatch } from "react-redux";
-import { useParams, useOutletContext, useMatch } from "react-router";
+import { useParams } from "react-router";
 
-import type {
-  EntityDetailsRoute,
-  ModelAppRoute,
-  ModelIndexRoute,
-} from "components/Routes";
-import type { BaseLayoutContext } from "layout/BaseLayout";
-import type { StatusView } from "layout/Status";
+import type { EntityDetailsRoute } from "components/Routes";
 import { getModelByUUID } from "store/juju/selectors";
 import { useAppSelector } from "store/store";
-import urls from "urls";
 import getUserName from "utils/getUserName";
 
 type NameProps = {
@@ -42,14 +32,6 @@ export const useEntityDetailsParams = () => {
   };
 };
 
-export const useModelIndexParams = (): Partial<ModelIndexRoute> => {
-  return useMatch(urls.model.index(null))?.params ?? {};
-};
-
-export const useModelAppParams = (): Partial<ModelAppRoute> => {
-  return useMatch(urls.model.app.index(null))?.params ?? {};
-};
-
 export const useModelByUUIDDetails = ({
   uuid,
   ownerTag,
@@ -60,43 +42,4 @@ export const useModelByUUIDDetails = ({
   const model = uuid ? modelDetails?.name : modelName;
   const userName = typeof owner === "string" ? getUserName(owner) : null;
   return { modelName: model, userName };
-};
-
-export const useStatusView = (statusView: StatusView) => {
-  const { setStatus } = useOutletContext<BaseLayoutContext>();
-
-  useEffect(() => {
-    setStatus(statusView);
-    return () => {
-      // Hide the view when navigating away from this component.
-      setStatus(null);
-    };
-  }, [setStatus, statusView]);
-};
-
-// Dispatch a cleanup action when a component unmounts.
-export const useCleanupOnUnmount = <P>(
-  cleanupAction: ActionCreatorWithPayload<P>,
-  cleanupEnabled?: boolean,
-  payload?: P | null,
-) => {
-  const dispatch = useDispatch();
-  const cleanupPayload = useRef<(() => void) | null>(null);
-
-  // Store the cleanup action in a ref, this is required otherwise the cleanup
-  // action will get called whenever any of the args change instead of when the
-  // component is unmounted.
-  useEffect(() => {
-    if (cleanupEnabled && payload) {
-      cleanupPayload.current = () => dispatch(cleanupAction(payload));
-    }
-  }, [cleanupEnabled, cleanupAction, dispatch, payload]);
-
-  // Clean up the store when the component that is using the hook gets unmounted.
-  useEffect(
-    () => () => {
-      cleanupPayload.current?.();
-    },
-    [],
-  );
 };

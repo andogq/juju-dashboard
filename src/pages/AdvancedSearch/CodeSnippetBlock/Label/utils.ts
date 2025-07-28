@@ -1,8 +1,6 @@
 import { ModelTab } from "urls";
 
-export const getTab = (
-  key: "applications" | "offers" | "machines" | "relations",
-) => {
+export const getTab = (key: string) => {
   switch (key) {
     case "applications":
     case "offers":
@@ -12,6 +10,6 @@ export const getTab = (
     case "relations":
       return ModelTab.INTEGRATIONS;
     default:
-      throw new Error(`unknown tab: ${key}`);
+      return;
   }
 };

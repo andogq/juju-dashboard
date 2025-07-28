@@ -101,10 +101,10 @@ export function generateConnectionOptions(
 function startPingerLoop(conn: ConnectionWithFacades) {
   // Ping to keep the connection alive.
   const intervalId = window.setInterval(() => {
-    conn.facades.pinger?.ping(null).catch((err) => {
+    conn.facades.pinger?.ping(null).catch((e) => {
       // If the pinger fails for whatever reason then cancel the ping.
       // Not shown in UI. Logged for debugging purposes.
-      logger.error("pinger stopped,", err);
+      logger.error("pinger stopped,", e);
       stopPingerLoop(intervalId);
     });
   }, PING_TIME);
@@ -133,9 +133,7 @@ export async function loginWithBakery(
 ) {
   const juju: JujuClient = await connect(
     wsControllerURL,
-    generateConnectionOptions(true, (err) =>
-      logger.log("controller closed", err),
-    ),
+    generateConnectionOptions(true, (e) => logger.log("controller closed", e)),
   );
   const loginParams = Auth.instance.determineCredentials(credentials);
   let conn: ConnectionWithFacades | null | undefined = null;

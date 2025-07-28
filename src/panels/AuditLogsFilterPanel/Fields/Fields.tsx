@@ -2,9 +2,10 @@ import { Input } from "@canonical/react-components";
 import { format } from "date-fns";
 import { Field, useFormikContext } from "formik";
 import type { JSX } from "react";
+import { useParams } from "react-router";
 
 import AutocompleteInput from "components/AutocompleteInput";
-import { useModelIndexParams } from "components/hooks";
+import type { EntityDetailsRoute } from "components/Routes";
 import { DATETIME_LOCAL } from "consts";
 import {
   getAuditEventsMethods,
@@ -20,7 +21,7 @@ import type { FormFields } from "../types";
 import { Label } from "./types";
 
 const Fields = (): JSX.Element => {
-  const { modelName } = useModelIndexParams();
+  const { modelName } = useParams<EntityDetailsRoute>();
   const showModel = !modelName;
   const auditEventUsers = useAppSelector(getAuditEventsUsers);
   const jujuUsers = useAppSelector(getUsers);

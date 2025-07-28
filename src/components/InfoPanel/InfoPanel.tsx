@@ -64,8 +64,8 @@ const InfoPanel = () => {
 
   const sendAnalytics = useAnalytics();
 
-  const handleExpandTopology = (ev: React.MouseEvent<HTMLButtonElement>) => {
-    openPortal(ev);
+  const handleExpandTopology = (e: React.MouseEvent<HTMLButtonElement>) => {
+    openPortal(e);
     sendAnalytics({
       path: undefined,
       category: "User",

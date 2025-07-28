@@ -2,16 +2,16 @@ import { Link } from "react-router";
 
 import NotFound from "components/NotFound";
 import useWindowTitle from "hooks/useWindowTitle";
-import type { MainContentProps } from "layout/MainContent";
-import MainContent from "layout/MainContent";
+import type { BaseLayoutProps } from "layout/BaseLayout";
+import BaseLayout from "layout/BaseLayout";
 import urls from "urls";
 
 import { Label } from "./types";
 
-export default function PageNotFound(props: Partial<MainContentProps>) {
+export default function PageNotFound(props: Partial<BaseLayoutProps>) {
   useWindowTitle("404 - Page not found");
   return (
-    <MainContent {...props}>
+    <BaseLayout {...props}>
       <div className="p-strip">
         <div className="row">
           <NotFound message={Label.NOT_FOUND}>
@@ -29,6 +29,6 @@ export default function PageNotFound(props: Partial<MainContentProps>) {
           </NotFound>
         </div>
       </div>
-    </MainContent>
+    </BaseLayout>
   );
 }

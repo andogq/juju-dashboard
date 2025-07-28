@@ -7,18 +7,17 @@ export enum Label {
 
 type Options = {
   address: string;
-  messageCallback: (messages: string[]) => void;
+  messageCallback: (message: string) => void;
   onclose: () => void;
   onopen: () => void;
   onerror: (error: Event | string) => void;
-  setLoading: (loading: boolean) => void;
 };
 
 class Connection {
   #address: string;
-  #messageBuffer: string[] = [];
-  #messageCallback: (messages: string[]) => void;
-  #setLoading: Options["setLoading"];
+  #messageBuffer = "";
+  #timeout: number | null = null;
+  #messageCallback: (message: string) => void;
   #wsOnOpen: () => void;
   #wsOnClose: () => void;
   #wsOnError: (error: Event | string) => void;
@@ -27,7 +26,6 @@ class Connection {
   constructor(options: Options) {
     this.#messageCallback = options.messageCallback;
     this.#address = options.address;
-    this.#setLoading = options.setLoading;
     this.#wsOnOpen = options.onopen;
     this.#wsOnClose = options.onclose;
     this.#wsOnError = options.onerror;
@@ -37,39 +35,29 @@ class Connection {
     return this.#address;
   }
 
-  connect(onOpen?: () => void, onError?: (event: Event) => void) {
+  connect() {
     const ws = new WebSocket(this.#address);
-    ws.onopen = () => {
-      this.#wsOnOpen();
-      onOpen?.();
-    };
+    ws.onopen = this.#wsOnOpen;
     ws.onclose = this.#wsOnClose;
     ws.onmessage = this.#handleMessage.bind(this);
-    ws.onerror = (event) => {
-      this.#wsOnError(event);
-      onError?.(event);
-    };
+    ws.onerror = this.#wsOnError;
     this.#ws = ws;
     return this;
   }
 
   send(message: string) {
-    this.#setLoading(true);
     this.#ws?.send(message);
   }
 
   disconnect() {
     if (this.isActive()) {
       this.#ws?.close();
-      this.#setLoading(false);
     }
-    this.#messageBuffer = [];
-  }
-
-  reconnect() {
-    return new Promise<void>((resolve, reject) => {
-      this.connect(resolve, reject);
-    });
+    if (this.#timeout) {
+      clearTimeout(this.#timeout);
+      this.#messageBuffer = "";
+      this.#timeout = null;
+    }
   }
 
   isOpen() {
@@ -85,7 +73,6 @@ class Connection {
   }
 
   #handleMessage(messageEvent: MessageEvent) {
-    this.#setLoading(false);
     try {
       let data: unknown;
       try {
@@ -112,9 +99,7 @@ class Connection {
         }
       }
       if ("done" in data && data.done) {
-        // This is the last message so send the entire message.
-        this.#messageCallback(this.#messageBuffer);
-        this.#messageBuffer = [];
+        // This is the last message.
         return;
       }
       if (!("output" in data) || !data.output) {
@@ -124,10 +109,27 @@ class Connection {
       if (!Array.isArray(data.output)) {
         throw new Error(Label.INCORRECT_DATA_ERROR);
       }
-      // Build up messages until it gets the 'done' message:
-      this.#messageBuffer.push(data.output[0]);
+      this.#pushToMessageBuffer(`\n${data.output[0]}`);
     } catch (error) {
       this.#wsOnError(toErrorString(error));
+    }
+  }
+
+  #pushToMessageBuffer(message: string) {
+    const bufferEmpty = !!this.#messageBuffer;
+    this.#messageBuffer = this.#messageBuffer + message;
+    if (bufferEmpty) {
+      this.#timeout = window.setTimeout(() => {
+        /*
+        The messageBuffer is required because the websocket returns messages
+        much faster than React wants to update the component. Doing this allows
+        us to store the messages in a buffer and then set the output every
+        cycle.
+      */
+        this.#messageCallback(this.#messageBuffer);
+        this.#messageBuffer = "";
+        this.#timeout = null;
+      });
     }
   }
 }

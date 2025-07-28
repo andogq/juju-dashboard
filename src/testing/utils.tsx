@@ -5,7 +5,6 @@ import type {
   UnknownAction,
 } from "@reduxjs/toolkit";
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import type { RenderHookResult } from "@testing-library/react";
 import { render, renderHook } from "@testing-library/react";
 import { useEffect, type PropsWithChildren, type ReactNode } from "react";
 import reactHotToast, { Toaster } from "react-hot-toast";
@@ -13,7 +12,6 @@ import { Provider } from "react-redux";
 import type { RouteObject } from "react-router";
 import {
   BrowserRouter,
-  Outlet,
   Route,
   RouterProvider,
   Routes,
@@ -43,7 +41,6 @@ type Options = {
   url?: string;
   path?: string;
   routeChildren?: RouteObject[];
-  initialProps?: Record<string, unknown>;
 } & (OptionsWithStore | OptionsWithState);
 
 export type ComponentProps = {
@@ -86,18 +83,12 @@ export const wrapComponent = (
   const router = createMemoryRouter(
     [
       {
-        path: "/",
-        element: <Outlet context={{ setStatus: vi.fn() }} />,
-        children: [
-          {
-            path: options?.path ?? "/",
-            element: <Provider store={store}>{component}</Provider>,
-            children: options?.routeChildren,
-          },
-          // Capture other paths to prevent warnings when navigating in tests.
-          { path: "*", element: <span>Navigated to an unknown URL.</span> },
-        ],
+        path: options?.path ?? "*",
+        element: <Provider store={store}>{component}</Provider>,
+        children: options?.routeChildren,
       },
+      // Capture other paths to prevent warnings when navigating in tests.
+      { path: "*", element: <span>Navigated to an unknown URL.</span> },
     ],
     { initialEntries: [options?.url ?? "/"] },
   );
@@ -143,11 +134,12 @@ export const renderWrappedHook = <Result, Props>(
   options?: Options | null,
 ): {
   router: Router | null;
+  result: { current: Result };
   store: OptionsWithStore["store"] | null;
-} & RenderHookResult<Result, Props> => {
+} => {
   let router: Router | null = null;
   let store: OptionsWithStore["store"] | null = null;
-  const result = renderHook(hook, {
+  const { result } = renderHook(hook, {
     queries,
     wrapper: ({ children }: PropsWithChildren) => {
       const {
@@ -165,7 +157,7 @@ export const renderWrappedHook = <Result, Props>(
       );
     },
   });
-  return { ...result, router, store };
+  return { router, result, store };
 };
 
 export function createStore(

@@ -1,10 +1,8 @@
 import { usePrevious } from "@canonical/react-components";
-import type { ActionCreatorWithPayload } from "@reduxjs/toolkit";
 import fastDeepEqual from "fast-deep-equal/es6";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 
-import { useCleanupOnUnmount } from "components/hooks";
 import type { RelationshipTuple } from "juju/jimm/JIMMV4";
 import { JIMMRelation, JIMMTarget } from "juju/jimm/JIMMV4";
 import {
@@ -18,67 +16,15 @@ import {
   getReBACPermissionLoaded,
   getReBACPermissionLoading,
   hasReBACPermission,
-  getReBACRelationshipsLoaded,
-  getReBACRelationshipsLoading,
-  getReBACPermissions,
 } from "store/juju/selectors";
 import { useAppSelector } from "store/store";
-
-export const useReBAC = <A, C>(
-  fetchAction: ActionCreatorWithPayload<A & { wsControllerURL: string }>,
-  cleanupAction: ActionCreatorWithPayload<C>,
-  loading: boolean,
-  loaded: boolean,
-  payload?: A | null,
-  payloadCleanup?: C | null,
-  cleanup?: boolean,
-) => {
-  const dispatch = useDispatch();
-  const wsControllerURL = useAppSelector(getWSControllerURL);
-  const rebacEnabled = useAppSelector(isReBACEnabled);
-  const previousCleanup = usePrevious(payloadCleanup, true);
-  const previousPayload = usePrevious(payload, true);
-  // Check if it has changed using deepEqual so that it ignores changes if the
-  // object has a new reference, but the values are the same.
-  const payloadChanged = !fastDeepEqual(payload, previousPayload);
-
-  useCleanupOnUnmount(cleanupAction, cleanup, payloadCleanup);
-
-  useEffect(() => {
-    if (
-      // Only fetch it if it doesn't already exist in the store or if the
-      // payload changes
-      ((!loading && !loaded) || payloadChanged) &&
-      wsControllerURL &&
-      payload &&
-      // Only check the relation if the controller supports rebac.
-      rebacEnabled
-    ) {
-      dispatch(fetchAction({ ...payload, wsControllerURL }));
-    }
-  }, [
-    dispatch,
-    loaded,
-    loading,
-    rebacEnabled,
-    payload,
-    wsControllerURL,
-    payloadChanged,
-    fetchAction,
-  ]);
-
-  // Clean up the store if the payload changes.
-  useEffect(() => {
-    if (cleanup && payloadChanged && previousCleanup) {
-      dispatch(cleanupAction(previousCleanup));
-    }
-  }, [cleanup, cleanupAction, dispatch, payloadChanged, previousCleanup]);
-};
 
 export const useCheckPermissions = (
   tuple?: RelationshipTuple | null,
   cleanup?: boolean,
 ) => {
+  const dispatch = useDispatch();
+  const wsControllerURL = useAppSelector(getWSControllerURL);
   const permitted = useAppSelector((state) => hasReBACPermission(state, tuple));
   const loaded = useAppSelector((state) =>
     getReBACPermissionLoaded(state, tuple),
@@ -86,14 +32,68 @@ export const useCheckPermissions = (
   const loading = useAppSelector((state) =>
     getReBACPermissionLoading(state, tuple),
   );
-  useReBAC(
-    jujuActions.checkRelation,
-    jujuActions.removeCheckRelation,
-    loading,
+  const rebacEnabled = useAppSelector(isReBACEnabled);
+  const previousTuple = usePrevious(tuple, false);
+  const tupleChanged = !fastDeepEqual(tuple, previousTuple);
+
+  useEffect(() => {
+    if (
+      // Only fetch it if it doesn't already exist in the store.
+      !loading &&
+      !loaded &&
+      wsControllerURL &&
+      tuple &&
+      // Ignore changes if the object has a new reference, but the values are
+      // the same.
+      tupleChanged &&
+      // Only check the relation if the controller supports rebac.
+      rebacEnabled
+    ) {
+      dispatch(
+        jujuActions.checkRelation({
+          tuple,
+          wsControllerURL,
+        }),
+      );
+    }
+  }, [
+    dispatch,
     loaded,
-    tuple ? { tuple } : null,
-    tuple ? { tuple } : null,
-    cleanup,
+    loading,
+    rebacEnabled,
+    tuple,
+    wsControllerURL,
+    tupleChanged,
+  ]);
+
+  useEffect(() => {
+    if (cleanup && tupleChanged && previousTuple) {
+      dispatch(
+        jujuActions.removeCheckRelation({
+          tuple: previousTuple,
+        }),
+      );
+    }
+  }, [cleanup, dispatch, previousTuple, tupleChanged]);
+
+  const cleanupTuple = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    if (cleanup && tupleChanged && tuple) {
+      cleanupTuple.current = () =>
+        dispatch(
+          jujuActions.removeCheckRelation({
+            tuple,
+          }),
+        );
+    }
+  }, [cleanup, dispatch, tuple, tupleChanged]);
+
+  useEffect(
+    () => () => {
+      cleanupTuple.current?.();
+    },
+    [],
   );
 
   return {
@@ -138,36 +138,5 @@ export const useAuditLogsPermitted = (cleanup?: boolean) => {
       auditLogsEnabled &&
       auditLogPermissions.permitted &&
       jimmAdminPermissions.permitted,
-  };
-};
-
-export const useCheckRelations = (
-  requestId: string,
-  tuples?: RelationshipTuple[] | null,
-  cleanup?: boolean,
-) => {
-  const loaded = useAppSelector((state) =>
-    getReBACRelationshipsLoaded(state, requestId),
-  );
-  const loading = useAppSelector((state) =>
-    getReBACRelationshipsLoading(state, requestId),
-  );
-  const permissions = useAppSelector((state) =>
-    getReBACPermissions(state, tuples),
-  );
-  useReBAC(
-    jujuActions.checkRelations,
-    jujuActions.removeCheckRelations,
-    loading,
-    loaded,
-    tuples ? { requestId, tuples } : null,
-    { requestId },
-    cleanup,
-  );
-
-  return {
-    loading,
-    loaded,
-    permissions,
   };
 };

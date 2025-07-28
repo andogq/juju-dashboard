@@ -5,8 +5,9 @@ import {
 } from "@canonical/react-components";
 import { useFormikContext } from "formik";
 import type { JSX } from "react";
+import { useParams } from "react-router";
 
-import { useModelIndexParams } from "components/hooks";
+import type { EntityDetailsRoute } from "components/Routes";
 import RevisionField from "components/secrets/RevisionField";
 import {
   getSecretByURI,
@@ -32,7 +33,7 @@ const Fields = ({
   secretURI,
   showConfirm,
 }: Props): JSX.Element => {
-  const { modelName, userName } = useModelIndexParams();
+  const { userName, modelName } = useParams<EntityDetailsRoute>();
   const modelUUID = useAppSelector((state) =>
     getModelUUIDFromList(state, modelName, userName),
   );

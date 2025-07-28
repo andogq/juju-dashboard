@@ -1,40 +1,38 @@
-import { ApplicationLayout } from "@canonical/react-components";
-import { useState, useEffect } from "react";
+import { ApplicationLayout, Panel } from "@canonical/react-components";
+import classNames from "classnames";
 import { Toaster } from "react-hot-toast";
-import { Link, Outlet, useLocation } from "react-router";
+import { Link, useLocation } from "react-router";
 
+import FadeIn from "animations/FadeIn";
 import Banner from "components/Banner";
-import DevBar from "components/DevBar";
+import LoadingSpinner from "components/LoadingSpinner";
 import Logo from "components/Logo";
 import PrimaryNav from "components/PrimaryNav";
+import SecondaryNavigation from "components/SecondaryNavigation";
 import { DARK_THEME } from "consts";
-import useAnalytics from "hooks/useAnalytics";
-import useFeatureFlags from "hooks/useFeatureFlags";
 import useOffline from "hooks/useOffline";
-import type { StatusView } from "layout/Status";
-import Status from "layout/Status";
 import Panels from "panels";
 import { getIsJuju } from "store/general/selectors";
 import { useAppSelector } from "store/store";
 import urls from "urls";
 
-import { Label } from "./types";
+import type { Props } from "./types";
+import { Label, TestId } from "./types";
 
-const BaseLayout = () => {
+const BaseLayout = ({
+  children,
+  loading,
+  secondaryNav,
+  status,
+  title,
+  titleClassName,
+  titleComponent,
+  ...props
+}: Props) => {
   const location = useLocation();
   const isOffline = useOffline();
   const isJuju = useAppSelector(getIsJuju);
-  const [status, setStatus] = useState<StatusView | null>(null);
-  const sendAnalytics = useAnalytics();
-
-  useFeatureFlags();
-
-  useEffect(() => {
-    // Send an analytics event when the URL changes.
-    sendAnalytics({
-      path: window.location.href.replace(window.location.origin, ""),
-    });
-  }, [location, sendAnalytics]);
+  const hasSecondaryNav = !!secondaryNav?.items.length;
 
   return (
     <>
@@ -67,9 +65,37 @@ const BaseLayout = () => {
           />
         }
         sideNavigation={<PrimaryNav />}
-        status={<Status status={status} />}
+        status={status}
       >
-        <Outlet context={{ setStatus }} />
+        <div
+          id="main-content"
+          className={classNames("l-main__content", {
+            "l-main__content--has-secondary-nav": hasSecondaryNav,
+          })}
+        >
+          <>
+            {hasSecondaryNav && !loading ? (
+              <SecondaryNavigation
+                items={secondaryNav.items}
+                title={secondaryNav.title}
+              />
+            ) : null}
+            <Panel
+              className="l-main__panel"
+              data-testid={TestId.MAIN}
+              titleClassName={titleClassName}
+              titleComponent={titleComponent}
+              stickyHeader
+              title={title}
+            >
+              <div className="l-content" {...props}>
+                <FadeIn isActive={true}>
+                  {loading ? <LoadingSpinner /> : children}
+                </FadeIn>
+              </div>
+            </Panel>
+          </>
+        </div>
       </ApplicationLayout>
       <Toaster
         position="bottom-right"
@@ -79,7 +105,6 @@ const BaseLayout = () => {
         }}
         reverseOrder={true}
       />
-      {import.meta.env.DEV && <DevBar />}
     </>
   );
 };

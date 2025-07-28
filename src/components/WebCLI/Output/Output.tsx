@@ -1,68 +1,33 @@
-import { useListener, usePrevious } from "@canonical/react-components";
-import fastDeepEqual from "fast-deep-equal/es6";
-import { useCallback, useEffect, useRef, useState } from "react";
+import Convert from "ansi-to-html";
+import type { ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import OutputCommand from "./OutputCommand";
-import {
-  HELP_HEIGHT,
-  CONSIDER_CLOSED,
-  DEFAULT_HEIGHT,
-  AUTO_SCROLL_DISTANCE,
-} from "./consts";
-import type { Props } from "./types";
 import { TestId } from "./types";
 
+type Props = {
+  content: string;
+  helpMessage: ReactNode;
+  showHelp: boolean;
+  setShouldShowHelp: (showHelp: boolean) => void;
+};
+
+const DEFAULT_HEIGHT = 300;
+// 20 is a magic number, sometimes the browser stops firing the drag at
+// an inopportune time and the element isn't left completely closed.
+const CONSIDER_CLOSED = 20;
+const HELP_HEIGHT = 50;
 const dragHandles = ["webcli__output-dragarea", "webcli__output-handle"];
 
 const WebCLIOutput = ({
   content,
   helpMessage,
-  loading,
-  processOutput,
   showHelp,
   setShouldShowHelp,
-  tableLinks,
 }: Props) => {
+  const convert = new Convert();
+
   const resizeDeltaY = useRef(0);
-  const dragNode = useRef<HTMLDivElement>(null);
-  const outputRef = useRef<HTMLPreElement>(null);
   const [height, setHeight] = useState(1);
-  const [dragHeight, setDragHeight] = useState(0);
-  const showHelpPrevious = usePrevious(showHelp, false);
-  const contentPrevious = usePrevious(content, false);
-  const contentChanged = !fastDeepEqual(content, contentPrevious);
-
-  const onResize = useCallback(() => {
-    if (dragNode.current) {
-      setDragHeight(dragNode.current.clientHeight);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (contentChanged && outputRef.current) {
-      const newResponseHeight = document.querySelector(
-        ".webcli__output-content-response:last-child",
-      )?.clientHeight;
-      const scrollHeight = outputRef.current.scrollHeight;
-      // Get the distance the scroll area is from the bottom.
-      const distance =
-        scrollHeight -
-        (outputRef.current.clientHeight +
-          outputRef.current.scrollTop +
-          // Need to get the position from the bottom before the new content in.
-          (newResponseHeight || 0));
-      if (distance <= AUTO_SCROLL_DISTANCE) {
-        outputRef.current.scrollTo({ top: scrollHeight });
-      }
-    }
-  }, [contentChanged]);
-
-  useListener(window, onResize, "resize", true, true);
-
-  useEffect(() => {
-    // Set the drag height on first render.
-    onResize();
-  }, [onResize]);
 
   useEffect(() => {
     const resize = (clientY: number) => {
@@ -75,33 +40,33 @@ const WebCLIOutput = ({
       }
     };
 
-    const resizeMouse = (ev: MouseEvent) => {
-      ev.preventDefault();
-      resize(ev.clientY);
+    const resizeMouse = (e: MouseEvent) => {
+      e.preventDefault();
+      resize(e.clientY);
     };
 
-    const resizeTouch = (ev: TouchEvent) => {
-      ev.preventDefault();
-      resize(ev.touches[0].clientY);
+    const resizeTouch = (e: TouchEvent) => {
+      e.preventDefault();
+      resize(e.touches[0].clientY);
     };
 
-    const addMouseResizeListener = (ev: MouseEvent) => {
-      const target = ev.target as HTMLElement;
+    const addMouseResizeListener = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
       if (!dragHandles.includes(target?.classList.value)) {
         return;
       }
-      resizeDeltaY.current = ev.offsetY ?? 0;
+      resizeDeltaY.current = e.offsetY ?? 0;
       document.addEventListener("mousemove", resizeMouse);
     };
 
-    const addTouchResizeListener = (ev: TouchEvent) => {
-      const target = ev.target as HTMLElement;
+    const addTouchResizeListener = (e: TouchEvent) => {
+      const target = e.target as HTMLElement;
       if (!dragHandles.includes(target?.classList.value)) {
         return;
       }
       const rect = target.getBoundingClientRect();
-      if (typeof ev.targetTouches?.[0]?.pageY === "number") {
-        resizeDeltaY.current = ev.targetTouches[0].pageY;
+      if (typeof e.targetTouches?.[0]?.pageY === "number") {
+        resizeDeltaY.current = e.targetTouches[0].pageY;
       } else if (typeof rect?.top === "number") {
         resizeDeltaY.current = 0 - rect.top;
       } else {
@@ -131,12 +96,9 @@ const WebCLIOutput = ({
 
   useEffect(() => {
     if (showHelp) {
-      setHeight(HELP_HEIGHT + dragHeight);
-    } else if (!showHelp && showHelpPrevious) {
-      // The help got closed so also close the panel.
-      setHeight(0);
+      setHeight(HELP_HEIGHT);
     }
-  }, [showHelp, dragHeight, showHelpPrevious]);
+  }, [showHelp]);
 
   useEffect(() => {
     if (height < CONSIDER_CLOSED) {
@@ -148,45 +110,34 @@ const WebCLIOutput = ({
     // New content is coming in, so check if we're collapsed and if we
     // are then open it back up.
     if (
-      // Only trigger this condition if the content changes.
-      contentChanged &&
-      content.length &&
+      content.length > 1 &&
       height <= HELP_HEIGHT &&
       height !== DEFAULT_HEIGHT
     ) {
       setHeight(DEFAULT_HEIGHT);
-      outputRef.current?.scrollTo({ top: outputRef.current.scrollHeight });
     }
-  }, [content, contentChanged, height]);
-
-  const output = content.map((historyItem, i) => (
-    <OutputCommand
-      {...historyItem}
-      key={`message-${i}`}
-      tableLinks={tableLinks}
-      processOutput={processOutput}
-    />
-  ));
+    // We can't have height as a dependency because we don't want this to run
+    // when the height changes, only when the content comes in.
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [content]);
 
   return (
     <div className="webcli__output" style={{ height: `${height}px` }}>
-      <div
-        className="webcli__output-dragarea"
-        aria-hidden={true}
-        ref={dragNode}
-      >
+      <div className="webcli__output-dragarea" aria-hidden={true}>
         <div className="webcli__output-handle"></div>
       </div>
       <pre
         className="webcli__output-content"
         style={{ height: `${height}px` }}
         data-testid={TestId.CONTENT}
-        ref={outputRef}
       >
-        {showHelp || (!loading && !content?.length) ? (
+        {showHelp || !content ? (
           <code data-testid={TestId.HELP}>{helpMessage}</code>
         ) : (
-          <code data-testid={TestId.CODE}>{output}</code>
+          <code
+            data-testid={TestId.CODE}
+            dangerouslySetInnerHTML={{ __html: convert.toHtml(content) }}
+          />
         )}
       </pre>
     </div>

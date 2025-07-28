@@ -14,7 +14,6 @@ import fastDeepEqual from "fast-deep-equal/es6";
 
 import type { AuditEvent, FindAuditEventsRequest } from "juju/jimm/JIMMV3";
 import type {
-  CheckRelationResponse,
   CrossModelQueryRequest,
   CrossModelQueryResponse,
   RelationshipTuple,
@@ -34,7 +33,6 @@ import type {
   ModelSecrets,
   SecretsContent,
   ReBACAllowed,
-  HistoryItem,
 } from "./types";
 
 export const DEFAULT_AUDIT_EVENTS_LIMIT = 50;
@@ -68,42 +66,6 @@ const getOrSetContentState = (state: JujuState, modelUUID: string) => {
   return content;
 };
 
-const defaultRelationState: Omit<ReBACAllowed, "tuple"> = {
-  errors: null,
-  loaded: false,
-  loading: false,
-};
-
-const updateCheckRelation = (
-  state: JujuState,
-  tuple: RelationshipTuple,
-  changes: Omit<Partial<ReBACAllowed>, "tuple">,
-) => {
-  const existingIndex = state.rebac.allowed.findIndex((relation) =>
-    fastDeepEqual(relation.tuple, tuple),
-  );
-  if (existingIndex >= 0) {
-    state.rebac.allowed[existingIndex] = {
-      ...state.rebac.allowed[existingIndex],
-      ...changes,
-    };
-  } else {
-    state.rebac.allowed.push({
-      tuple,
-      ...defaultRelationState,
-      ...changes,
-    });
-  }
-};
-
-const startCheckRelation = (state: JujuState, tuple: RelationshipTuple) => {
-  updateCheckRelation(state, tuple, {
-    errors: null,
-    loaded: false,
-    loading: true,
-  });
-};
-
 const slice = createSlice({
   name: "juju",
   initialState: {
@@ -120,7 +82,6 @@ const slice = createSlice({
       loaded: false,
       loading: false,
     },
-    commandHistory: {},
     controllers: null,
     models: {},
     modelsError: null,
@@ -131,7 +92,6 @@ const slice = createSlice({
     charms: [],
     rebac: {
       allowed: [],
-      relationships: [],
     },
     secrets: {},
     selectedApplications: [],
@@ -339,7 +299,7 @@ const slice = createSlice({
       >,
     ) => {
       action.payload.charms = action.payload.charms.filter((charm) => {
-        return !state.charms.some((stateCharm) => stateCharm.url === charm.url);
+        return !state.charms.some((c) => c.url === charm.url);
       });
       state.charms = [...state.charms, ...action.payload.charms];
     },
@@ -442,7 +402,21 @@ const slice = createSlice({
         payload,
       }: PayloadAction<{ tuple: RelationshipTuple } & WsControllerURLParam>,
     ) => {
-      startCheckRelation(state, payload.tuple);
+      const tuple = payload.tuple;
+      const relationState: ReBACAllowed = {
+        errors: null,
+        loaded: false,
+        loading: true,
+        tuple,
+      };
+      const existingIndex = state.rebac.allowed.findIndex((relation) =>
+        fastDeepEqual(relation.tuple, tuple),
+      );
+      if (existingIndex >= 0) {
+        state.rebac.allowed[existingIndex] = relationState;
+      } else {
+        state.rebac.allowed.push(relationState);
+      }
     },
     addCheckRelation: (
       state,
@@ -450,23 +424,35 @@ const slice = createSlice({
         payload,
       }: PayloadAction<{ tuple: RelationshipTuple; allowed: boolean }>,
     ) => {
-      updateCheckRelation(state, payload.tuple, {
-        allowed: payload.allowed,
-        errors: null,
-        loaded: true,
-        loading: false,
-      });
+      const existingIndex = state.rebac.allowed.findIndex((relation) =>
+        fastDeepEqual(relation.tuple, payload.tuple),
+      );
+      if (existingIndex >= 0) {
+        state.rebac.allowed[existingIndex] = {
+          ...state.rebac.allowed[existingIndex],
+          allowed: payload.allowed,
+          errors: null,
+          loaded: true,
+          loading: false,
+        };
+      }
     },
     addCheckRelationErrors: (
       state,
       { payload }: PayloadAction<{ tuple: RelationshipTuple; errors: string }>,
     ) => {
-      updateCheckRelation(state, payload.tuple, {
-        allowed: null,
-        errors: payload.errors,
-        loaded: false,
-        loading: false,
-      });
+      const existingIndex = state.rebac.allowed.findIndex((relation) =>
+        fastDeepEqual(relation.tuple, payload.tuple),
+      );
+      if (existingIndex >= 0) {
+        state.rebac.allowed[existingIndex] = {
+          ...state.rebac.allowed[existingIndex],
+          allowed: null,
+          errors: payload.errors,
+          loaded: false,
+          loading: false,
+        };
+      }
     },
     removeCheckRelation: (
       state,
@@ -478,133 +464,6 @@ const slice = createSlice({
       if (existingIndex >= 0) {
         state.rebac.allowed.splice(existingIndex, 1);
       }
-    },
-    checkRelations: (
-      state,
-      {
-        payload,
-      }: PayloadAction<
-        {
-          tuples: RelationshipTuple[];
-          requestId: string;
-        } & WsControllerURLParam
-      >,
-    ) => {
-      payload.tuples.forEach((tuple) => {
-        startCheckRelation(state, tuple);
-      });
-      const checkState = {
-        errors: null,
-        requestId: payload.requestId,
-        loaded: false,
-        loading: true,
-      };
-      const existingIndex = state.rebac.relationships.findIndex(
-        (relation) => relation.requestId === payload.requestId,
-      );
-      if (existingIndex >= 0) {
-        state.rebac.relationships[existingIndex] = checkState;
-      } else {
-        state.rebac.relationships.push(checkState);
-      }
-    },
-    addCheckRelations: (
-      state,
-      {
-        payload,
-      }: PayloadAction<{
-        permissions: CheckRelationResponse[];
-        requestId: string;
-        tuples: RelationshipTuple[];
-      }>,
-    ) => {
-      payload.tuples.forEach((tuple, i) => {
-        updateCheckRelation(state, tuple, {
-          ...(payload.permissions[i] ? payload.permissions[i] : {}),
-          loading: false,
-          loaded: true,
-        });
-      });
-      const existingIndex = state.rebac.relationships.findIndex(
-        (relation) => relation.requestId === payload.requestId,
-      );
-      const checkState = {
-        errors: null,
-        loaded: true,
-        loading: false,
-      };
-      if (existingIndex >= 0) {
-        state.rebac.relationships[existingIndex] = {
-          ...state.rebac.relationships[existingIndex],
-          ...checkState,
-        };
-      } else {
-        state.rebac.relationships.push({
-          requestId: payload.requestId,
-          ...checkState,
-        });
-      }
-    },
-    addCheckRelationsErrors: (
-      state,
-      {
-        payload,
-      }: PayloadAction<{
-        requestId: string;
-        errors: string;
-        tuples: RelationshipTuple[];
-      }>,
-    ) => {
-      payload.tuples.forEach((tuple) => {
-        updateCheckRelation(state, tuple, {
-          loading: false,
-          loaded: false,
-        });
-      });
-      const existingIndex = state.rebac.relationships.findIndex(
-        (relation) => relation.requestId === payload.requestId,
-      );
-      const checkState = {
-        loaded: false,
-        loading: false,
-        errors: [payload.errors],
-      };
-      if (existingIndex >= 0) {
-        state.rebac.relationships[existingIndex] = {
-          ...state.rebac.relationships[existingIndex],
-          ...checkState,
-        };
-      } else {
-        state.rebac.relationships.push({
-          requestId: payload.requestId,
-          ...checkState,
-        });
-      }
-    },
-    removeCheckRelations: (
-      state,
-      { payload }: PayloadAction<{ requestId: string }>,
-    ) => {
-      const existingIndex = state.rebac.relationships.findIndex(
-        (relation) => relation.requestId === payload.requestId,
-      );
-      if (existingIndex >= 0) {
-        state.rebac.relationships.splice(existingIndex, 1);
-      }
-    },
-    addCommandHistory: (
-      state,
-      {
-        payload: { modelUUID, historyItem },
-      }: PayloadAction<{
-        modelUUID: string;
-        historyItem: HistoryItem;
-      }>,
-    ) => {
-      if (!(modelUUID in state.commandHistory)) {
-        state.commandHistory[modelUUID] = [];
-      }
-      state.commandHistory[modelUUID].push(historyItem);
     },
   },
 });

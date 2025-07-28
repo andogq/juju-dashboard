@@ -99,11 +99,11 @@ export default function ShareCard({
                     name="access"
                     onFocus={() => setInFocus(true)}
                     onBlur={() => setInFocus(false)}
-                    onChange={(ev) => {
+                    onChange={(e) => {
                       setShowStatus(true);
                       setUpdateStatus("Updating");
                       const accessChange = accessSelectChange(
-                        ev.target.value,
+                        e.target.value,
                         userName,
                       );
                       accessChange

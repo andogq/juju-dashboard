@@ -4,11 +4,12 @@ import classnames from "classnames";
 import cloneDeep from "clone-deep";
 import type { JSX, MouseEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useParams } from "react-router";
 
 import FadeIn from "animations/FadeIn";
 import CharmIcon from "components/CharmIcon";
 import Panel from "components/Panel";
-import { useModelAppParams } from "components/hooks";
+import type { EntityDetailsRoute } from "components/Routes";
 import { isSet } from "components/utils";
 import useAnalytics from "hooks/useAnalytics";
 import useInlineErrors, { type SetError } from "hooks/useInlineErrors";
@@ -92,7 +93,7 @@ export default function ConfigPanel(): JSX.Element {
     entity: null,
     modelUUID: null,
   };
-  const { modelName, userName } = useModelAppParams();
+  const { userName, modelName } = useParams<EntityDetailsRoute>();
   const [queryParams, , handleRemovePanelQueryParams] =
     usePanelQueryParams<ConfigQueryParams>(defaultQueryParams);
   const { entity: appName, charm, modelUUID } = queryParams;

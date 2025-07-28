@@ -16,8 +16,6 @@ import { Controller } from "./objects";
 const LOCAL_CLI_ADMIN = {
   username: getEnv("ADMIN_USERNAME"),
   password: getEnv("ADMIN_PASSWORD"),
-  identityUsername: getEnv("ADMIN_IDENTITY_USERNAME", null),
-  identityPassword: getEnv("ADMIN_IDENTITY_PASSWORD", null),
 };
 
 /**
@@ -39,18 +37,12 @@ export class JujuCLI {
     browser: Browser,
   ) {
     this.users = new Users(browser);
-    const { username, password, identityUsername, identityPassword } =
-      LOCAL_CLI_ADMIN;
+    const { username, password } = LOCAL_CLI_ADMIN;
     // Create a Juju identity instance for the CLI admin.
     this.localAdmin = new LocalUser(username, password);
     // Create an identity instance for the admin user. When using local auth
     // this will be identical to this.localAdmin.
-    this.identityAdmin = this.users.createUserInstance(
-      username,
-      password,
-      identityUsername,
-      identityPassword,
-    );
+    this.identityAdmin = this.users.createUserInstance(username, password);
     this.controllerInstance = new Controller(
       // In JIMM the controller name given to Juju is "jimm".
       this.jujuEnv === JujuEnv.JIMM ? "jimm" : this.controller,
@@ -81,18 +73,8 @@ export class JujuCLI {
    * This is suitable for performing login actions with the CLI/dashboard using the logic of the
    * auth provider.
    */
-  public fakeUser(
-    username: string,
-    password: string,
-    identityUsername?: string | null,
-    identityPassword?: string | null,
-  ): User {
-    return this.users.createUserInstance(
-      username,
-      password,
-      identityUsername,
-      identityPassword,
-    );
+  public fakeUser(username: string, password: string): User {
+    return this.users.createUserInstance(username, password);
   }
 
   /**

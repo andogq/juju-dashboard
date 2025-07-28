@@ -1,20 +1,21 @@
 import type { Macaroon } from "@canonical/macaroon-bakery/dist/macaroon";
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useStore } from "react-redux";
 
+import useAnalytics from "hooks/useAnalytics";
 import useInlineErrors from "hooks/useInlineErrors";
 import useLocalStorage from "hooks/useLocalStorage";
 import bakery from "juju/bakery";
+import { getActiveUserTag } from "store/general/selectors";
 import type { Credential } from "store/general/types";
-import type { HistoryItem, CommandHistory } from "store/juju/types";
 import { externalURLs } from "urls";
 import { getUserName } from "utils";
 
-import type { OutputProps } from "./Output";
 import WebCLIOutput from "./Output";
 import Connection from "./connection";
 import { MAX_HISTORY } from "./consts";
-import { Label, TestId } from "./types";
+import { Label } from "./types";
 
 enum InlineErrors {
   CONNECTION = "connection",
@@ -24,16 +25,7 @@ enum InlineErrors {
 type Props = {
   controllerWSHost: string;
   credentials?: Credential | null;
-  history?: CommandHistory;
   modelUUID: string;
-  onCommandSent: (command?: string) => void;
-  activeUser?: string;
-  onHistoryChange?: (modelUUID: string, historyItem: HistoryItem) => void;
-  /**
-   * When overriding this function then ANSI codes need to be manually handled.
-   */
-  processOutput?: OutputProps["processOutput"];
-  tableLinks?: OutputProps["tableLinks"];
   protocol?: string;
 };
 
@@ -44,30 +36,29 @@ type Authentication = {
 };
 
 const WebCLI = ({
-  activeUser,
   controllerWSHost,
   credentials,
-  history,
   modelUUID,
-  onCommandSent,
-  onHistoryChange,
-  processOutput,
   protocol = "wss",
-  tableLinks,
 }: Props) => {
   const connection = useRef<Connection | null>(null);
-  const [shouldShowHelp, setShouldShowHelp] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [shouldShowHelp, setShouldShowHelp] = useState(false);
   const [historyPosition, setHistoryPosition] = useState(0);
   const [inlineErrors, setInlineError, hasInlineError] = useInlineErrors();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [output, setOutput] = useState<CommandHistory>(history || {});
-  const lastCommand = useRef<string | null>(null);
+  const wsMessageStore = useRef<string>("");
+  const [output, setOutput] = useState("");
+  const sendAnalytics = useAnalytics();
+  const storeState = useStore().getState();
   const [cliHistory, setCLIHistory] = useLocalStorage<string[]>(
     "cliHistory",
     [],
   );
 
+  const clearMessageBuffer = () => {
+    wsMessageStore.current = "";
+    setOutput(""); // Clear the output when sending a new message.
+  };
   const keydownListener = useCallback(
     (event: KeyboardEvent) => {
       if (event.key === "ArrowUp" || event.key === "ArrowDown") {
@@ -148,23 +139,13 @@ const WebCLI = ({
           );
         }
       },
-      messageCallback: (messages: string[]) => {
-        const command = lastCommand.current;
-        if (command) {
-          setOutput((previousOutput) => ({
-            ...previousOutput,
-            [modelUUID]: [
-              ...(modelUUID in previousOutput ? previousOutput[modelUUID] : []),
-              { command, messages },
-            ],
-          }));
-          onHistoryChange?.(modelUUID, { command, messages });
-        }
+      messageCallback: (message: string) => {
+        wsMessageStore.current = wsMessageStore.current + message;
+        setOutput(wsMessageStore.current);
       },
-      setLoading,
     }).connect();
     connection.current = conn;
-  }, [modelUUID, onHistoryChange, setInlineError, wsAddress]);
+  }, [setInlineError, wsAddress]);
 
   useEffect(
     () => () => {
@@ -173,8 +154,9 @@ const WebCLI = ({
     [],
   );
 
-  const handleCommandSubmit = async (ev: FormEvent<HTMLFormElement>) => {
-    ev.preventDefault();
+  const handleCommandSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    clearMessageBuffer();
     setShouldShowHelp(false);
     // We need to get the most up to date connection information in the event
     // that the original connection was redirected. This typically happens in
@@ -191,9 +173,14 @@ const WebCLI = ({
       const origin = connection.current?.address
         ? new URL(connection.current?.address)?.origin
         : null;
-      const macaroons = origin ? bakery.storage.get(`${origin}/api`) : null;
+      const macaroons = origin ? bakery.storage.get(origin) : null;
       if (macaroons) {
         const deserialized = JSON.parse(atob(macaroons));
+        const originalWSOrigin = wsAddress ? new URL(wsAddress).origin : null;
+        const activeUser = getActiveUserTag(
+          storeState,
+          `${originalWSOrigin}/api`,
+        );
         authentication.user = activeUser ? getUserName(activeUser) : undefined;
         authentication.macaroons = [deserialized];
       }
@@ -203,55 +190,48 @@ const WebCLI = ({
       );
     }
 
-    const formFields = ev.currentTarget.children;
-    if (!("command" in formFields)) {
-      return;
-    }
-    const command = (formFields.command as HTMLInputElement).value.trim();
-    let history = cliHistory.concat([command]);
-    if (history.length > MAX_HISTORY) {
-      history = history.slice(-MAX_HISTORY);
-    }
-    setCLIHistory(history);
-    // Reset the position in case the user was navigating through the history.
-    setHistoryPosition(0);
-
-    if (!connection.current?.isOpen()) {
-      try {
-        await connection.current?.reconnect();
-      } catch (error) {
-        setInlineError(InlineErrors.CONNECTION, Label.CONNECTION_ERROR);
-        return;
+    let command;
+    const formFields = e.currentTarget.children;
+    if ("command" in formFields) {
+      command = (formFields.command as HTMLInputElement).value.trim();
+      let history = cliHistory.concat([command]);
+      if (history.length > MAX_HISTORY) {
+        history = history.slice(-MAX_HISTORY);
       }
+      setCLIHistory(history);
+      // Reset the position in case the user was navigating through the history.
+      setHistoryPosition(0);
     }
-    lastCommand.current = command;
-    connection.current?.send(
-      JSON.stringify({
-        ...authentication,
-        commands: [command],
-      }),
-    );
-    onCommandSent(command);
+
+    if (connection.current?.isOpen()) {
+      connection.current?.send(
+        JSON.stringify({
+          ...authentication,
+          commands: [command],
+        }),
+      );
+      sendAnalytics({
+        category: "User",
+        action: "WebCLI command sent",
+      });
+    } else {
+      setInlineError(InlineErrors.CONNECTION, Label.NOT_OPEN_ERROR);
+    }
     if (inputRef.current) {
       inputRef.current.value = ""; // Clear the input after sending the message.
     }
   };
 
-  const showHelp = (event: React.MouseEvent | React.KeyboardEvent) => {
-    // Only trigger the help from the space or enter keys (or mouse clicks).
-    if ("key" in event && !["Enter", " "].includes(event.key)) {
-      return;
-    }
+  const showHelp = () => {
     setShouldShowHelp(!shouldShowHelp);
   };
 
   return (
-    <div className="webcli is-dark" data-testid={TestId.COMPONENT}>
+    <div className="webcli">
       <WebCLIOutput
-        content={output && modelUUID in output ? output[modelUUID] : []}
-        showHelp={shouldShowHelp || hasInlineError()}
+        content={output}
+        showHelp={shouldShowHelp || hasInlineError(InlineErrors.AUTHENTICATION)}
         setShouldShowHelp={setShouldShowHelp}
-        tableLinks={tableLinks}
         helpMessage={
           // If errors exist, display them instead of the default help message.
           hasInlineError() ? (
@@ -263,25 +243,22 @@ const WebCLI = ({
           ) : (
             <>
               Welcome to the Juju Web CLI - see the{" "}
-              <a href={externalURLs.cliHelp} rel="noreferrer" target="_blank">
+              <a
+                href={externalURLs.cliHelp}
+                className="p-link--inverted"
+                rel="noreferrer"
+                target="_blank"
+              >
                 full documentation here
               </a>
               .
             </>
           )
         }
-        loading={loading}
-        processOutput={processOutput}
       />
       <div className="webcli__input">
         <div className="webcli__input-prompt">$ juju</div>
-        <form
-          onSubmit={(event) => {
-            handleCommandSubmit(event).catch(() =>
-              setInlineError(InlineErrors.CONNECTION, Label.UNKNOWN_ERROR),
-            );
-          }}
-        >
+        <form onSubmit={handleCommandSubmit}>
           <input
             autoComplete="off"
             autoCorrect="off"
@@ -291,13 +268,12 @@ const WebCLI = ({
             type="text"
             name="command"
             ref={inputRef}
-            aria-label={Label.COMMAND}
-            placeholder={Label.COMMAND}
+            placeholder="enter command"
+            disabled={hasInlineError(InlineErrors.CONNECTION)}
           />
         </form>
         <div className="webcli__input-help">
           <i
-            aria-label={Label.HELP}
             className="p-icon--help is-light"
             onClick={showHelp}
             onKeyDown={showHelp}

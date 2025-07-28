@@ -66,9 +66,8 @@ const Label = ({ keyPath }: Props): ReturnType<LabelRenderer> => {
     case "offers":
     case "relations":
     case "model":
-      const tab = currentKey === "model" ? undefined : getTab(currentKey);
       return (
-        <ResultsModelLink uuid={modelUUID} view={tab}>
+        <ResultsModelLink uuid={modelUUID} view={getTab(currentKey)}>
           {currentKey}
         </ResultsModelLink>
       );

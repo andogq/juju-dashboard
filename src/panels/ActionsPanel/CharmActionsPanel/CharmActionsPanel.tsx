@@ -64,9 +64,7 @@ export default function CharmActionsPanel({
       enableSubmit(
         selectedAction,
         selectedApplications
-          .map((application) =>
-            "name" in application ? application.name : null,
-          )
+          .map((a) => ("name" in a ? a.name : null))
           .filter(filterExist),
         actionData,
         actionOptionsValues,
@@ -82,9 +80,7 @@ export default function CharmActionsPanel({
       enableSubmit(
         actionName,
         selectedApplications
-          .map((application) =>
-            "name" in application ? application.name : null,
-          )
+          .map((a) => ("name" in a ? a.name : null))
           .filter(filterExist),
         actionData,
         actionOptionsValues,

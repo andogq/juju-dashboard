@@ -30,11 +30,6 @@ import {
   rebacAllowedFactory,
   relationshipTupleFactory,
   secretRevisionFactory,
-  modelSecretsContentFactory,
-  rebacState,
-  rebacRelationshipFactory,
-  commandHistoryState,
-  commandHistoryItem,
 } from "testing/factories/juju/juju";
 import {
   applicationInfoFactory,
@@ -46,6 +41,8 @@ import {
   workloadStatusFactory,
   modelWatcherModelInfoFactory,
 } from "testing/factories/juju/model-watcher";
+
+import { modelSecretsContentFactory } from "../../testing/factories/juju/juju";
 
 import {
   getActiveUser,
@@ -125,13 +122,6 @@ import {
   getSecretLatestRevision,
   getReBACPermissionLoading,
   getReBACPermissionLoaded,
-  getReBACRelationshipsState,
-  getReBACRelationships,
-  getReBACRelationshipsLoading,
-  getReBACRelationshipsLoaded,
-  getReBACPermissions,
-  getReBACPermission,
-  getCommandHistory,
 } from "./selectors";
 
 describe("selectors", () => {
@@ -735,83 +725,6 @@ describe("selectors", () => {
     ).toStrictEqual(true);
   });
 
-  it("getReBACPermission", () => {
-    const tuple = relationshipTupleFactory.build({
-      object: "user-eggman@external",
-      relation: JIMMRelation.ADMINISTRATOR,
-      target_object: JIMMTarget.JIMM_CONTROLLER,
-    });
-    const allowed = rebacAllowedFactory.build({
-      tuple,
-      loading: true,
-    });
-    expect(
-      getReBACPermission(
-        rootStateFactory.build({
-          juju: jujuStateFactory.build({
-            rebac: {
-              allowed: [
-                allowed,
-                rebacAllowedFactory.build({
-                  tuple: relationshipTupleFactory.build({
-                    target_object: "model-not-a-match",
-                  }),
-                  loading: true,
-                }),
-              ],
-            },
-          }),
-        }),
-        tuple,
-      ),
-    ).toStrictEqual(allowed);
-  });
-
-  it("getReBACPermissions", () => {
-    const tuples = [
-      relationshipTupleFactory.build({
-        object: "user-eggman@external",
-        relation: JIMMRelation.ADMINISTRATOR,
-        target_object: JIMMTarget.JIMM_CONTROLLER,
-      }),
-      relationshipTupleFactory.build({
-        object: "user-eggman@external",
-        relation: JIMMRelation.WRITER,
-        target_object: JIMMTarget.JIMM_CONTROLLER,
-      }),
-    ];
-    const allowed = [
-      rebacAllowedFactory.build({
-        tuple: tuples[0],
-        loading: true,
-      }),
-      rebacAllowedFactory.build({
-        tuple: tuples[1],
-        loading: false,
-      }),
-    ];
-    expect(
-      getReBACPermissions(
-        rootStateFactory.build({
-          juju: jujuStateFactory.build({
-            rebac: {
-              allowed: [
-                ...allowed,
-                rebacAllowedFactory.build({
-                  tuple: relationshipTupleFactory.build({
-                    target_object: "model-not-a-match",
-                  }),
-                  loading: true,
-                }),
-              ],
-            },
-          }),
-        }),
-        tuples,
-      ),
-    ).toStrictEqual(allowed);
-  });
-
   it("getReBACPermissionLoading doesn't exist", () => {
     const tuple = relationshipTupleFactory.build({
       object: "user-eggman@external",
@@ -912,127 +825,6 @@ describe("selectors", () => {
           }),
         }),
         tuple,
-      ),
-    ).toStrictEqual(false);
-  });
-
-  it("getReBACRelationshipsState", () => {
-    const relationships = [rebacRelationshipFactory.build()];
-    expect(
-      getReBACRelationshipsState(
-        rootStateFactory.build({
-          juju: jujuStateFactory.build({
-            rebac: rebacState.build({
-              relationships,
-            }),
-          }),
-        }),
-      ),
-    ).toStrictEqual(relationships);
-  });
-
-  it("getReBACRelationships exists", () => {
-    const requestId = "123456";
-    const relationship = rebacRelationshipFactory.build({
-      requestId,
-    });
-    expect(
-      getReBACRelationships(
-        rootStateFactory.build({
-          juju: jujuStateFactory.build({
-            rebac: rebacState.build({
-              relationships: [relationship],
-            }),
-          }),
-        }),
-        requestId,
-      ),
-    ).toStrictEqual(relationship);
-  });
-
-  it("getReBACRelationships doesn't exist", () => {
-    expect(
-      getReBACRelationships(
-        rootStateFactory.build({
-          juju: jujuStateFactory.build({
-            rebac: rebacState.build({
-              relationships: [],
-            }),
-          }),
-        }),
-        "12345",
-      ),
-    ).toBeUndefined();
-  });
-
-  it("getReBACRelationshipsLoading exists", () => {
-    const requestId = "123456";
-    expect(
-      getReBACRelationshipsLoading(
-        rootStateFactory.build({
-          juju: jujuStateFactory.build({
-            rebac: rebacState.build({
-              relationships: [
-                rebacRelationshipFactory.build({
-                  requestId,
-                  loading: true,
-                }),
-              ],
-            }),
-          }),
-        }),
-        requestId,
-      ),
-    ).toStrictEqual(true);
-  });
-
-  it("getReBACRelationshipsLoading doesn't exist", () => {
-    expect(
-      getReBACRelationshipsLoading(
-        rootStateFactory.build({
-          juju: jujuStateFactory.build({
-            rebac: rebacState.build({
-              relationships: [],
-            }),
-          }),
-        }),
-        "123456",
-      ),
-    ).toStrictEqual(false);
-  });
-
-  it("getReBACRelationshipsLoaded exists", () => {
-    const requestId = "123456";
-    expect(
-      getReBACRelationshipsLoaded(
-        rootStateFactory.build({
-          juju: jujuStateFactory.build({
-            rebac: rebacState.build({
-              relationships: [
-                rebacRelationshipFactory.build({
-                  requestId,
-                  loaded: true,
-                }),
-              ],
-            }),
-          }),
-        }),
-        requestId,
-      ),
-    ).toStrictEqual(true);
-  });
-
-  it("getReBACRelationshipsLoaded doesn't exist", () => {
-    expect(
-      getReBACRelationshipsLoaded(
-        rootStateFactory.build({
-          juju: jujuStateFactory.build({
-            rebac: rebacState.build({
-              relationships: [],
-            }),
-          }),
-        }),
-        "123456",
       ),
     ).toStrictEqual(false);
   });
@@ -2513,17 +2305,5 @@ describe("selectors", () => {
         ),
       ).toBe(true);
     });
-  });
-
-  it("getCommandHistory", () => {
-    const commandHistory = commandHistoryState.build({
-      abc1234: [commandHistoryItem.build()],
-    });
-    const state = rootStateFactory.build({
-      juju: jujuStateFactory.build({
-        commandHistory,
-      }),
-    });
-    expect(getCommandHistory(state)).toStrictEqual(commandHistory);
   });
 });
