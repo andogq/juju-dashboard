@@ -1,15 +1,11 @@
 import type { Client } from "@canonical/jujulib";
 import { unwrapResult } from "@reduxjs/toolkit";
-import * as Sentry from "@sentry/react";
 import { isAction, type Middleware } from "redux";
 
-import { Auth } from "auth";
 import {
-  disableControllerUUIDMasking,
   fetchAndStoreModelStatus,
   fetchControllerList,
   fetchModelInfo,
-  loginWithBakery,
   setModelSharingPermissions,
 } from "juju/api";
 import {
@@ -83,15 +79,17 @@ export const modelPollerMiddleware: Middleware<
         reduxStore.getState,
       );
       reduxStore.dispatch(
-        modelListMiddleware.actions.start({ wsControllerURL }),
+        modelListMiddleware.actions.start({ withConnection: wsControllerURL }),
       );
-    } else if (action.type === updateModelStatuses.type) {
+    } else if (actionWithConnection(updateModelStatuses, action)) {
       const modelList = Object.entries(getModelList(reduxStore.getState()));
       let errorCount = 0;
       let lastErrorWSController = null;
       for (const [modelUUID, { wsControllerURL }] of modelList) {
-        const conn = controllers.get(wsControllerURL);
-        if (!conn || !isLoggedIn(reduxStore.getState(), wsControllerURL)) {
+        if (
+          wsControllerURL !== action.payload.withConnection ||
+          !isLoggedIn(reduxStore.getState(), wsControllerURL)
+        ) {
           continue;
         }
         try {
@@ -106,7 +104,9 @@ export const modelPollerMiddleware: Middleware<
             // progress.
             continue;
           }
-          const modelInfo = await fetchModelInfo(conn, [modelUUID]);
+          const modelInfo = await fetchModelInfo(action.meta.connection, [
+            modelUUID,
+          ]);
           if (!modelInfo) {
             continue;
           }

@@ -36,4 +36,6 @@ export const updateControllerList = createAction<{ withConnection: string }>(
 /**
  * For each model present within Redux, fetch and store the model status.
  */
-export const updateModelStatuses = createAction("app/updateModelStatuses");
+export const updateModelStatuses = createAction<{ withConnection: string }>(
+  "app/updateModelStatuses",
+);

@@ -111,8 +111,6 @@ class ConnectionManager {
       throw new Error("could not continue connection");
     }
 
-    console.log({ wsControllerURL, credentials });
-
     const {
       conn: connection,
       error,
@@ -182,6 +180,9 @@ export const connectionMiddleware: Middleware<
     getCredentials: (wsControllerURL): AuthCredential | undefined =>
       getUserPass(store.getState(), wsControllerURL),
     onConnection: async (wsControllerURL, connection): Promise<void> => {
+      // Allows info to be serialised.
+      delete connection.info.getFacade;
+
       const analyticsEnabled = getAnalyticsEnabled(store.getState());
       const isJuju = getIsJuju(store.getState()) ?? false;
       const dashboardVersion = getAppVersion(store.getState()) ?? "";
