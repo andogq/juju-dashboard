@@ -28,6 +28,12 @@ export const connectAndPollControllers = createAction<{
   isJuju: boolean;
 }>("app/connectAndPollControllers");
 /**
+ * Update the controller list from a given controller.
+ */
+export const updateControllerList = createAction<{ withConnection: string }>(
+  "app/updateControllerList",
+);
+/**
  * For each model present within Redux, fetch and store the model status.
  */
 export const updateModelStatuses = createAction("app/updateModelStatuses");

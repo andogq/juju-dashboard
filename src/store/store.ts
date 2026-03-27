@@ -11,6 +11,7 @@ import { modelPollerMiddleware } from "store/middleware/model-poller";
 import { logger } from "utils/logger";
 
 import { listenerMiddleware } from "./listenerMiddleware";
+import { connectionMiddleware } from "./middleware/connection";
 import sourceMiddleware from "./middleware/source";
 
 type PreloadedState = Record<string, unknown>;
@@ -39,6 +40,7 @@ const store = configureStore({
     const middleware = getDefaultMiddleware();
     // The checkAuth middleware must be first.
     middleware.unshift(checkAuth);
+    middleware.unshift(connectionMiddleware);
     middleware.push(listenerMiddleware.middleware);
     middleware.push(modelPollerMiddleware);
     middleware.push(...sourceMiddleware);

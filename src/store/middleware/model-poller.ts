@@ -20,23 +20,18 @@ import {
 } from "juju/jimm/api";
 import type { ConnectionWithFacades, DestroyModelErrors } from "juju/types";
 import { actions as appActions, thunks as appThunks } from "store/app";
-import { updateModelStatuses } from "store/app/actions";
+import { updateControllerList, updateModelStatuses } from "store/app/actions";
 import { actions as generalActions } from "store/general";
-import {
-  getAnalyticsEnabled,
-  getAppVersion,
-  getIsJuju,
-  isLoggedIn,
-} from "store/general/selectors";
+import { isLoggedIn } from "store/general/selectors";
 import { actions as jujuActions } from "store/juju";
 import { getModelList } from "store/juju/selectors";
 import { addControllerCloudRegion } from "store/juju/thunks";
 import type { RootState, Store } from "store/store";
 import { isSpecificAction } from "types";
 import { toErrorString } from "utils";
-import analytics from "utils/analytics";
 import { logger } from "utils/logger";
 
+import { actionWithConnection } from "./connection";
 import modelListMiddleware from "./source/model-list";
 
 export enum LoginError {
@@ -73,142 +68,23 @@ export const modelPollerMiddleware: Middleware<
       // Each time we try to log in to a controller we get new macaroons, so
       // first clean up any old auth requests:
       reduxStore.dispatch(generalActions.clearVisitURLs());
-      for (const controllerData of action.payload.controllers) {
-        const [wsControllerURL, credentials] = controllerData;
-        let conn: ConnectionWithFacades | null | undefined = null;
-        let juju: Client | null | undefined = null;
-        let error: unknown = null;
-        let intervalId: null | number = null;
-        reduxStore.dispatch(generalActions.updateLoginLoading(true));
-        const continueConnection = await Auth.instance.beforeControllerConnect({
-          wsControllerURL,
-          credentials,
-        });
-        if (!continueConnection) {
-          reduxStore.dispatch(generalActions.updateLoginLoading(false));
-          return;
-        }
-        try {
-          ({
-            conn,
-            error,
-            juju,
-            intervalId = null,
-          } = await loginWithBakery(wsControllerURL, credentials));
-          if (conn) {
-            controllers.set(wsControllerURL, conn);
-          }
-          if (error) {
-            reduxStore.dispatch(
-              generalActions.storeLoginError({
-                wsControllerURL,
-                error: toErrorString(error),
-              }),
-            );
-            return;
-          }
-        } catch (err) {
-          reduxStore.dispatch(
-            generalActions.storeLoginError({
-              wsControllerURL,
-              error:
-                "Unable to log into the controller, check that the controller address is correct and that it is online.",
-            }),
-          );
-          logger.log(LoginError.LOG, err, controllerData);
-          return;
-        } finally {
-          reduxStore.dispatch(generalActions.updateLoginLoading(false));
-        }
-
-        if (!conn?.info || !Object.keys(conn.info).length) {
-          reduxStore.dispatch(
-            generalActions.storeLoginError({
-              wsControllerURL,
-              error: LoginError.NO_INFO,
-            }),
-          );
-          return;
-        }
-
-        const analyticsEnabled = getAnalyticsEnabled(reduxStore.getState());
-        const isJuju = !!getIsJuju(reduxStore.getState());
-        const dashboardVersion = getAppVersion(reduxStore.getState()) ?? "";
-        const controllerVersion = conn.info.serverVersion ?? "";
-
-        analytics(
-          !!analyticsEnabled,
-          { dashboardVersion, controllerVersion, isJuju: isJuju.toString() },
-          {
-            category: "Authentication",
-            action: `User Login (${Auth.instance.name})`,
-          },
-        );
-
-        // XXX Now that we can register multiple controllers this needs
-        // to be sent per controller.
-        if (analyticsEnabled) {
-          Sentry.setTag("jujuVersion", conn.info.serverVersion);
-        }
-
-        // Remove the getFacade function as this doesn't need to be stored in Redux.
-        delete conn.info.getFacade;
-        // Store the controller info. The transport and facades are not used
-        // (or available by other means) so no need to store them.
+      for (const [wsControllerURL, _] of action.payload.controllers) {
         reduxStore.dispatch(
-          generalActions.updateControllerConnection({
-            wsControllerURL,
-            info: conn.info,
-          }),
-        );
-        const jimmVersion = conn.facades.jimM?.version ?? 0;
-        reduxStore.dispatch(
-          generalActions.updateControllerFeatures({
-            wsControllerURL,
-            features: {
-              auditLogs: jimmVersion >= 4,
-              crossModelQueries: jimmVersion >= 4,
-              rebac: jimmVersion >= 4,
-            },
-          }),
-        );
-        if (juju) {
-          jujus.set(wsControllerURL, juju);
-        }
-        if (intervalId) {
-          reduxStore.dispatch(
-            generalActions.updatePingerIntervalId({
-              wsControllerURL,
-              intervalId,
-            }),
-          );
-        }
-
-        await fetchControllerList(
-          wsControllerURL,
-          conn,
-          reduxStore.dispatch,
-          reduxStore.getState,
-        );
-        if (!isJuju) {
-          // This call will be a noop if the user isn't an administrator
-          // on the JIMM controller we're connected to.
-          try {
-            await disableControllerUUIDMasking(conn);
-          } catch (err) {
-            // Silently fail, if this doesn't work then the user isn't authorized
-            // to perform the action.
-          }
-        }
-      }
-
-      for (const wsControllerURL of controllers.keys()) {
-        reduxStore.dispatch(
-          modelListMiddleware.actions.start({ wsControllerURL }),
+          updateControllerList({ withConnection: wsControllerURL }),
         );
       }
-
       return;
+    } else if (actionWithConnection(updateControllerList, action)) {
+      const wsControllerURL = action.payload.withConnection;
+      await fetchControllerList(
+        wsControllerURL,
+        action.meta.connection,
+        reduxStore.dispatch,
+        reduxStore.getState,
+      );
+      reduxStore.dispatch(
+        modelListMiddleware.actions.start({ wsControllerURL }),
+      );
     } else if (action.type === updateModelStatuses.type) {
       const modelList = Object.entries(getModelList(reduxStore.getState()));
       let errorCount = 0;
