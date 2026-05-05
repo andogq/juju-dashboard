@@ -43,7 +43,7 @@ const toCredentialOptions = (
     const credentialName = extractCredentialName(credential);
     return {
       label: credentialName,
-      value: credentialName,
+      value: credential,
     };
   });
 
@@ -67,8 +67,7 @@ const toRegionOptions = (
 
 const MandatoryDetails = (): JSX.Element => {
   const dispatch = useAppDispatch();
-  const { values, setFieldValue, setValues } =
-    useFormikContext<AddModelFormState>();
+  const { values, setFieldValue } = useFormikContext<AddModelFormState>();
   const wsControllerURL = useAppSelector(getWSControllerURL);
   const cloudInfo = useAppSelector(getCloudInfoState).clouds;
   const userCredentials = useAppSelector(getUserCredentialsState);
@@ -84,6 +83,15 @@ const MandatoryDetails = (): JSX.Element => {
       void setFieldValue("cloud", defaultCloud);
     }
   }, [values.cloud, defaultCloud, setFieldValue]);
+
+  useEffect(() => {
+    if (!values.credential && userCredentials && values.cloud) {
+      void setFieldValue(
+        "credential",
+        userCredentials.credentials?.[values.cloud]?.[0] ?? "",
+      );
+    }
+  }, [values.credential, values.cloud, userCredentials, setFieldValue]);
 
   useEffect(() => {
     if (
@@ -139,13 +147,10 @@ const MandatoryDetails = (): JSX.Element => {
         required
         options={cloudOptions}
         onChange={(ev) => {
-          const nextCloud = String(ev.target.value);
-          void setValues((prevValues) => ({
-            ...prevValues,
-            cloud: nextCloud,
-            region: "",
-            credential: "",
-          }));
+          const nextCloud = ev.target.value;
+          void setFieldValue("cloud", nextCloud);
+          void setFieldValue("region", "");
+          void setFieldValue("credential", "");
           setSelectedCloud(nextCloud);
         }}
       />

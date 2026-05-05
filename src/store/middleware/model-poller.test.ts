@@ -28,6 +28,7 @@ import {
   jujuStateFactory,
 } from "testing/factories/juju/juju";
 import { createStore } from "testing/utils";
+import { AccessLevel } from "types";
 
 import { LoginError, modelPollerMiddleware } from "./model-poller";
 import disableCommand from "./process/block/disable-command";
@@ -1574,6 +1575,49 @@ describe("model poller", () => {
     );
   });
 
+  it("skips disable command process when model created with DisabledType = none", async () => {
+    vi.spyOn(jujuModule, "loginWithBakery").mockImplementation(async () => ({
+      conn,
+      intervalId,
+      juju,
+    }));
+    conn.facades.modelManager.createModel.mockResolvedValue({
+      uuid: "model-uuid-123",
+    });
+    const middleware = await runMiddleware();
+    const action = jujuActions.addModel({
+      wsControllerURL: "wss://example.com/api",
+      modelName: "model123",
+      userTag: "user-eggman@external",
+      cloudTag: "cloud-aws",
+      credential: "credential-aws",
+      disabledCommands: DisableType.NONE,
+    });
+    await middleware(next)(action);
+    expect(conn.facades.modelManager.createModel).toHaveBeenCalledWith({
+      name: "model123",
+      credential: "credential-aws",
+      "cloud-tag": "cloud-aws",
+      "owner-tag": "user-eggman@external",
+      qualifier: "user-eggman@external",
+      region: undefined,
+    });
+    expect(fakeStore.dispatch).not.toHaveBeenCalledWith(
+      disableCommand.actions.run({
+        modelUUID: "model-uuid-123",
+        modelURL: "wss://example.com/model/model-uuid-123/api",
+        wsControllerURL: "wss://example.com/api",
+        params: { type: DisableType.NONE },
+      }),
+    );
+    expect(fakeStore.dispatch).toHaveBeenCalledWith(
+      jujuActions.setAddModelResult({
+        success: true,
+        wsControllerURL: "wss://example.com/api",
+      }),
+    );
+  });
+
   it("skips disable command process when add-model fails", async () => {
     vi.spyOn(jujuModule, "loginWithBakery").mockImplementation(async () => ({
       conn,
@@ -1615,6 +1659,103 @@ describe("model poller", () => {
         success: false,
         wsControllerURL: "wss://example.com/api",
       }),
+    );
+  });
+
+  it("shares newly added model with specified users", async () => {
+    vi.spyOn(jujuModule, "loginWithBakery").mockImplementation(async () => ({
+      conn,
+      intervalId,
+      juju,
+    }));
+    conn.facades.modelManager.createModel.mockResolvedValue({
+      uuid: "model-uuid-123",
+    });
+
+    const setModelSharingPermissionsSpy = vi.spyOn(
+      jujuModule,
+      "setModelSharingPermissions",
+    );
+
+    const middleware = await runMiddleware();
+    const action = jujuActions.addModel({
+      wsControllerURL: "wss://example.com/api",
+      modelName: "model123",
+      userTag: "user-eggman@external",
+      cloudTag: "cloud-aws",
+      credential: "credential-aws",
+      disabledCommands: DisableType.NONE,
+      shareModelWith: {
+        "new-user@external": AccessLevel.READ,
+      },
+    });
+
+    await middleware(next)(action);
+
+    expect(setModelSharingPermissionsSpy).toHaveBeenCalledWith(
+      "wss://example.com/api",
+      "model-uuid-123",
+      conn,
+      "new-user@external",
+      AccessLevel.READ,
+      undefined,
+      "grant",
+      fakeStore.dispatch,
+    );
+  });
+
+  it("applies grant for others and revoke for active user on Juju", async () => {
+    vi.spyOn(jujuModule, "loginWithBakery").mockImplementation(async () => ({
+      conn,
+      intervalId,
+      juju,
+    }));
+    conn.facades.modelManager.createModel.mockResolvedValue({
+      uuid: "model-uuid-123",
+    });
+
+    const setModelSharingPermissionsSpy = vi.spyOn(
+      jujuModule,
+      "setModelSharingPermissions",
+    );
+
+    const middleware = await runMiddleware();
+    const action = jujuActions.addModel({
+      wsControllerURL: "wss://example.com/api",
+      modelName: "model123",
+      userTag: "user-test@example.com",
+      cloudTag: "cloud-aws",
+      credential: "credential-aws",
+      disabledCommands: DisableType.NONE,
+      shareModelWith: {
+        "test2@example.com": AccessLevel.ADMIN,
+        "test@example.com": AccessLevel.READ,
+      },
+    });
+
+    await middleware(next)(action);
+
+    expect(setModelSharingPermissionsSpy).toHaveBeenNthCalledWith(
+      1,
+      "wss://example.com/api",
+      "model-uuid-123",
+      conn,
+      "test2@example.com",
+      AccessLevel.ADMIN,
+      undefined,
+      "grant",
+      fakeStore.dispatch,
+    );
+    expect(setModelSharingPermissionsSpy).toHaveBeenNthCalledWith(
+      2,
+      "wss://example.com/api",
+      "model-uuid-123",
+      conn,
+      "test@example.com",
+      AccessLevel.READ,
+      AccessLevel.WRITE,
+      "revoke",
+      fakeStore.dispatch,
     );
   });
 });

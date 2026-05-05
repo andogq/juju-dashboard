@@ -23,8 +23,10 @@ import { actions as jujuActions } from "store/juju";
 import { getModelList } from "store/juju/selectors";
 import { addControllerCloudRegion } from "store/juju/thunks";
 import type { RootState, Store } from "store/store";
-import { isSpecificAction } from "types";
-import { toErrorString } from "utils";
+import { type AccessLevel, isSpecificAction } from "types";
+import { getUserName, toErrorString } from "utils";
+import { bumpAccessLevel } from "utils/getAccessLevel";
+import getModelURL from "utils/getModelURL";
 import { logger } from "utils/logger";
 
 import {
@@ -509,6 +511,7 @@ function runModelPoller(
         credential,
         region,
         userTag,
+        shareModelWith,
         disabledCommands,
         config,
       } = action.payload;
@@ -540,24 +543,63 @@ function runModelPoller(
           if ("error" in response) {
             throw response.error;
           } else if (
-            disabledCommands !== DisableType.NONE &&
             typeof response.uuid === "string" &&
             response.uuid.length > 0
           ) {
-            const modelURL = wsControllerURL.replace(
-              "/api",
-              `/model/${response.uuid}/api`,
-            );
-            reduxStore.dispatch(
-              disableCommand.run({
-                modelUUID: response.uuid,
-                modelURL,
-                wsControllerURL,
-                params: {
-                  type: disabledCommands,
-                },
-              }),
-            );
+            if (disabledCommands !== DisableType.NONE) {
+              const modelURL = getModelURL(wsControllerURL, response.uuid);
+              reduxStore.dispatch(
+                disableCommand.run({
+                  modelUUID: response.uuid,
+                  modelURL,
+                  wsControllerURL,
+                  params: {
+                    type: disabledCommands,
+                  },
+                }),
+              );
+            }
+
+            if (shareModelWith) {
+              const usersToShare = Object.entries(shareModelWith);
+              for (const [user, targetAccessLevel] of usersToShare) {
+                try {
+                  // For the active user, we will always be downgrading the access level
+                  if (user === getUserName(userTag)) {
+                    // In Juju, we can directly revoke access of one higher level to grant the target level.
+                    const permissionFrom = bumpAccessLevel(
+                      targetAccessLevel as AccessLevel,
+                    );
+                    await setModelSharingPermissions(
+                      wsControllerURL,
+                      response.uuid,
+                      conn,
+                      user,
+                      targetAccessLevel,
+                      permissionFrom,
+                      "revoke",
+                      reduxStore.dispatch,
+                    );
+                  } else {
+                    await setModelSharingPermissions(
+                      wsControllerURL,
+                      response.uuid,
+                      conn,
+                      user,
+                      targetAccessLevel,
+                      undefined,
+                      "grant",
+                      reduxStore.dispatch,
+                    );
+                  }
+                } catch (error) {
+                  logger.error(
+                    "Could not set model sharing permissions.",
+                    error,
+                  );
+                }
+              }
+            }
           }
 
           reduxStore.dispatch(
