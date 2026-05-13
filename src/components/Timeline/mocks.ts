@@ -17,9 +17,12 @@ export const mockTimelineEvents: TimelineEvent[] = [
     timestamp: pastDate(5),
     entity: "mysql",
     entityKind: "application",
-    detail: {
-      previousStatus: "maintenance",
-      newStatus: "active",
+    payload: {
+      type: "status-change",
+      data: {
+        previousStatus: "maintenance",
+        newStatus: "active",
+      },
     },
     severity: "success",
   },
@@ -29,8 +32,11 @@ export const mockTimelineEvents: TimelineEvent[] = [
     timestamp: pastDate(15),
     entity: "mysql/0",
     entityKind: "unit",
-    detail: {
-      message: "disk space critical",
+    payload: {
+      type: "unit-error",
+      data: {
+        message: "disk space critical",
+      },
     },
     severity: "error",
   },
@@ -38,11 +44,13 @@ export const mockTimelineEvents: TimelineEvent[] = [
     id: "3",
     type: "relation-created",
     timestamp: pastDate(30),
-    entity: "mysql:db \u2192 wordpress:db",
+    entity: "mysql:db → wordpress:db",
     entityKind: "relation",
-    detail: {
-      relatedApp: "wordpress",
-      interface: "db",
+    payload: {
+      type: "relation-created",
+      data: {
+        interface: "db",
+      },
     },
     severity: "success",
   },
@@ -52,8 +60,11 @@ export const mockTimelineEvents: TimelineEvent[] = [
     timestamp: pastDate(45),
     entity: "mysql",
     entityKind: "application",
-    detail: {
-      unitCount: 3,
+    payload: {
+      type: "scale-up",
+      data: {
+        unitCount: 3,
+      },
     },
     severity: "info",
   },
@@ -63,8 +74,11 @@ export const mockTimelineEvents: TimelineEvent[] = [
     timestamp: pastDate(60),
     entity: "mysql/0",
     entityKind: "unit",
-    detail: {
-      message: "unit recovered successfully",
+    payload: {
+      type: "unit-resolved",
+      data: {
+        message: "unit recovered successfully",
+      },
     },
     severity: "success",
   },
@@ -74,9 +88,12 @@ export const mockTimelineEvents: TimelineEvent[] = [
     timestamp: pastDate(120),
     entity: "wordpress",
     entityKind: "application",
-    detail: {
-      previousStatus: "waiting",
-      newStatus: "active",
+    payload: {
+      type: "status-change",
+      data: {
+        previousStatus: "waiting",
+        newStatus: "active",
+      },
     },
     severity: "success",
   },
@@ -84,11 +101,13 @@ export const mockTimelineEvents: TimelineEvent[] = [
     id: "7",
     type: "relation-removed",
     timestamp: pastDate(180),
-    entity: "mysql:db \u2192 redis:cache",
+    entity: "mysql:db → redis:cache",
     entityKind: "relation",
-    detail: {
-      relatedApp: "redis",
-      interface: "db",
+    payload: {
+      type: "relation-removed",
+      data: {
+        interface: "db",
+      },
     },
     severity: "warning",
   },
@@ -98,8 +117,11 @@ export const mockTimelineEvents: TimelineEvent[] = [
     timestamp: pastDate(240),
     entity: "wordpress",
     entityKind: "application",
-    detail: {
-      unitCount: 1,
+    payload: {
+      type: "scale-down",
+      data: {
+        unitCount: 1,
+      },
     },
     severity: "warning",
   },
@@ -109,9 +131,12 @@ export const mockTimelineEvents: TimelineEvent[] = [
     timestamp: pastDate(360),
     entity: "mysql",
     entityKind: "application",
-    detail: {
-      previousStatus: "unknown",
-      newStatus: "maintenance",
+    payload: {
+      type: "status-change",
+      data: {
+        previousStatus: "unknown",
+        newStatus: "maintenance",
+      },
     },
     severity: "info",
   },
@@ -121,8 +146,11 @@ export const mockTimelineEvents: TimelineEvent[] = [
     timestamp: pastDate(480),
     entity: "wordpress/1",
     entityKind: "unit",
-    detail: {
-      message: "hook failed: install",
+    payload: {
+      type: "unit-error",
+      data: {
+        message: "hook failed: install",
+      },
     },
     severity: "error",
   },
@@ -130,11 +158,13 @@ export const mockTimelineEvents: TimelineEvent[] = [
     id: "11",
     type: "relation-created",
     timestamp: pastDate(720),
-    entity: "wordpress:cache \u2192 redis:cache",
+    entity: "wordpress:cache → redis:cache",
     entityKind: "relation",
-    detail: {
-      relatedApp: "redis",
-      interface: "cache",
+    payload: {
+      type: "relation-created",
+      data: {
+        interface: "cache",
+      },
     },
     severity: "success",
   },
@@ -144,9 +174,12 @@ export const mockTimelineEvents: TimelineEvent[] = [
     timestamp: pastDate(1440),
     entity: "wordpress",
     entityKind: "application",
-    detail: {
-      previousStatus: "unknown",
-      newStatus: "waiting",
+    payload: {
+      type: "status-change",
+      data: {
+        previousStatus: "unknown",
+        newStatus: "waiting",
+      },
     },
     severity: "info",
   },
@@ -156,8 +189,11 @@ export const mockTimelineEvents: TimelineEvent[] = [
     timestamp: futureDate(30),
     entity: "postgresql",
     entityKind: "application",
-    detail: {
-      message: "scheduled deployment of postgresql charm",
+    payload: {
+      type: "planned-deployment",
+      data: {
+        message: "scheduled deployment of postgresql charm",
+      },
     },
     severity: "info",
     isFuture: true,
@@ -168,9 +204,12 @@ export const mockTimelineEvents: TimelineEvent[] = [
     timestamp: futureDate(120),
     entity: "mysql",
     entityKind: "application",
-    detail: {
-      unitCount: 5,
-      message: "planned scale-up for traffic spike",
+    payload: {
+      type: "planned-scaling",
+      data: {
+        targetCount: 5,
+        message: "planned scale-up for traffic spike",
+      },
     },
     severity: "info",
     isFuture: true,
@@ -181,8 +220,11 @@ export const mockTimelineEvents: TimelineEvent[] = [
     timestamp: futureDate(1440),
     entity: "mysql",
     entityKind: "application",
-    detail: {
-      message: "scheduled maintenance window",
+    payload: {
+      type: "planned-maintenance",
+      data: {
+        message: "scheduled maintenance window",
+      },
     },
     severity: "warning",
     isFuture: true,
@@ -193,9 +235,12 @@ export const mockTimelineEvents: TimelineEvent[] = [
     timestamp: futureDate(2880),
     entity: "wordpress",
     entityKind: "application",
-    detail: {
-      unitCount: 5,
-      message: "planned scale-up for traffic spike",
+    payload: {
+      type: "planned-scaling",
+      data: {
+        targetCount: 5,
+        message: "planned scale-up for traffic spike",
+      },
     },
     severity: "info",
     isFuture: true,
@@ -206,8 +251,11 @@ export const mockTimelineEvents: TimelineEvent[] = [
     timestamp: futureDate(4320),
     entity: "redis",
     entityKind: "application",
-    detail: {
-      message: "scheduled deployment of redis charm v2",
+    payload: {
+      type: "planned-deployment",
+      data: {
+        message: "scheduled deployment of redis charm v2",
+      },
     },
     severity: "info",
     isFuture: true,
@@ -218,8 +266,11 @@ export const mockTimelineEvents: TimelineEvent[] = [
     timestamp: futureDate(10080),
     entity: "wordpress",
     entityKind: "application",
-    detail: {
-      message: "scheduled security patching window",
+    payload: {
+      type: "planned-maintenance",
+      data: {
+        message: "scheduled security patching window",
+      },
     },
     severity: "warning",
     isFuture: true,

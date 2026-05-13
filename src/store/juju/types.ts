@@ -164,40 +164,10 @@ export type AddModelState = {
 
 export type TimelineEventsState = SourceData<TimelineEvent[]>;
 
-export type TimelineEventsState = SourceData<TimelineEvent[]>;
-
 export type BlockEntry = {
   running: boolean;
   status: "initiated" | "pending" | null;
   outcome: null | ProcessOutcome<void>;
-};
-
-export type BlockState = Record<string, BlockEntry>;
-
-export type JujuState = {
-  auditEvents: AuditEventsState;
-  crossModelQuery: CrossModelQueryState;
-  destroyModel: DestroyState;
-  commandHistory: CommandHistory;
-  controllers: Controllers | null;
-  models: ModelsList;
-  modelsError: null | string;
-  modelsLoaded: boolean;
-  modelListLoading: Record<string, boolean>;
-  modelData: ModelDataList;
-  modelFeatures: ModelFeaturesState;
-  modelUpgrade: ModelUpgradeState;
-  modelMigrationTargets: ModelMigrationTargetsState;
-  charms: Charm[];
-  rebac: ReBACState;
-  secrets: SecretsState;
-  cloudInfo: CloudState;
-  userCredentials: UserCredentialsState;
-  selectedApplications: Record<string, ApplicationStatus>;
-  supportedJujuVersions: SupportedJujuVersionsState;
-  addModelState: AddModelState;
-  blockState: BlockState;
-  timelineEvents: TimelineEventsState;
 };
 
 export type BlockState = Record<string, BlockEntry>;

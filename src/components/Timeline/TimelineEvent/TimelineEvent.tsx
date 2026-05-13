@@ -5,7 +5,13 @@ import type { FC } from "react";
 import RelativeDate from "components/RelativeDate";
 import { testId } from "testing/utils";
 
-import type { TimelineEvent as TimelineEventType } from "../types";
+import type {
+  StatusChangePayload,
+  TimelineEvent as TimelineEventType,
+  RelationEventPayload,
+  ScaleEventPayload,
+  PlannedScalingPayload,
+} from "../types";
 import { TestId } from "../types";
 
 type Props = {
@@ -26,28 +32,35 @@ const eventTypeLabels: Record<TimelineEventType["type"], string> = {
 };
 
 const getDetailMessage = (event: TimelineEventType): string => {
-  const { type, detail } = event;
-  switch (type) {
-    case "status-change":
-      if (detail.previousStatus && detail.newStatus) {
-        return `${detail.previousStatus} \u2192 ${detail.newStatus}`;
+  const data = event.payload.data;
+  switch (event.type) {
+    case "status-change": {
+      const d = data as StatusChangePayload;
+      if (d.previousStatus && d.newStatus) {
+        return `${d.previousStatus} \u2192 ${d.newStatus}`;
       }
-      return detail.newStatus ?? detail.message ?? "";
+      return d.newStatus ?? d.message ?? "";
+    }
     case "relation-created":
-    case "relation-removed":
-      if (detail.relatedApp && detail.interface) {
-        return `${detail.relatedApp} (${detail.interface})`;
+    case "relation-removed": {
+      const d = data as RelationEventPayload;
+      if (d.interface) {
+        return d.interface;
       }
-      return detail.message ?? "";
+      return (data as { message?: string }).message ?? "";
+    }
     case "scale-up":
     case "scale-down":
-    case "planned-scaling":
-      if (detail.unitCount) {
-        return `${detail.unitCount} unit${detail.unitCount > 1 ? "s" : ""}`;
+    case "planned-scaling": {
+      const d = data as ScaleEventPayload | PlannedScalingPayload;
+      const unitCount = "unitCount" in d ? d.unitCount : d.targetCount;
+      if (unitCount) {
+        return `${unitCount} unit${unitCount > 1 ? "s" : ""}`;
       }
-      return detail.message ?? "";
+      return (data as { message?: string }).message ?? "";
+    }
     default:
-      return detail.message ?? "";
+      return (data as { message?: string }).message ?? "";
   }
 };
 

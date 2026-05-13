@@ -8,11 +8,11 @@ import EntityInfo from "components/EntityInfo";
 import InfoPanel from "components/InfoPanel";
 import type { EntityDetailsRoute } from "components/Routes";
 import Timeline from "components/Timeline";
-import { mockTimelineEvents } from "components/Timeline/mocks";
 import useCanConfigureModel from "hooks/useCanConfigureModel";
 import useModelAccess from "hooks/useModelAccess";
 import useModelStatus from "hooks/useModelStatus";
 import useStatusHistory from "hooks/useStatusHistory";
+import useFullStatusTimelineEvents from "hooks/useFullStatusTimelineEvents";
 import { useQueryParams } from "hooks/useQueryParams";
 import {
   getModelApplications,
@@ -80,6 +80,18 @@ const Model: FC = () => {
 
   const { qualifier, modelName } = useParams<EntityDetailsRoute>();
   useStatusHistory(modelName, qualifier);
+  const fullStatusEvents = useFullStatusTimelineEvents(modelName, qualifier);
+  const statusHistoryEvents = useAppSelector(
+    (state) => state.juju.timelineEvents.data ?? [],
+  );
+  const timelineEvents = useMemo(
+    () =>
+      [...fullStatusEvents, ...statusHistoryEvents].sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      ),
+    [fullStatusEvents, statusHistoryEvents],
+  );
 
   const [query] = useQueryParams<{
     entity: null | string;
@@ -263,7 +275,7 @@ const Model: FC = () => {
           <Secrets />
         ) : null}
         {shouldShow("timeline", query.activeView) && (
-          <Timeline events={mockTimelineEvents} />
+          <Timeline events={timelineEvents} />
         )}
       </div>
     </>

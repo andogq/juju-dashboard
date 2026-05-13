@@ -1,22 +1,16 @@
 export type TimelineEventType =
-  // Status events (from statusHistory or polling diff)
   | "planned-deployment"
   | "planned-maintenance"
   | "planned-scaling"
-  // Relation events (from polling diff)
   | "relation-created"
   | "relation-removed"
-  // Scale events (from polling diff)
   | "scale-down"
   | "scale-up"
-  // Future/planned events (from external sources)
   | "status-change"
   | "unit-error"
   | "unit-resolved";
 
 export type TimelineEventSeverity = "error" | "info" | "success" | "warning";
-
-// -- Payloads --
 
 export interface StatusChangePayload {
   previousStatus: string;
@@ -69,8 +63,6 @@ export type EventPayload =
   | { type: "unit-error"; data: UnitErrorPayload }
   | { type: "unit-resolved"; data: UnitResolvedPayload };
 
-// -- Core event --
-
 export interface TimelineEvent {
   id: string;
   type: TimelineEventType;
@@ -82,8 +74,6 @@ export interface TimelineEvent {
   isFuture?: boolean;
   metadata?: Record<string, unknown>;
 }
-
-// -- Component props --
 
 export interface TimelineProps {
   events: TimelineEvent[];
@@ -108,41 +98,3 @@ export enum TestId {
   PAST_SECTION = "past-section",
   FUTURE_SECTION = "future-section",
 }
-
-export type TimelineEventType =
-  | "planned-deployment"
-  | "planned-maintenance"
-  | "planned-scaling"
-  | "relation-created"
-  | "relation-removed"
-  | "scale-down"
-  | "scale-up"
-  | "status-change"
-  | "unit-error"
-  | "unit-resolved";
-
-export type TimelineEventSeverity = "error" | "info" | "success" | "warning";
-
-export type TimelineEvent = {
-  id: string;
-  type: TimelineEventType;
-  timestamp: string; // ISO 8601
-  entity: string;
-  entityKind: "application" | "relation" | "unit";
-  detail: {
-    previousStatus?: string;
-    newStatus?: string;
-    message?: string;
-    relatedApp?: string;
-    interface?: string;
-    unitCount?: number;
-  };
-  severity: TimelineEventSeverity;
-  isFuture?: boolean;
-};
-
-export type TimelineProps = {
-  events: TimelineEvent[];
-  loading?: boolean;
-  emptyStateMsg?: string;
-};
