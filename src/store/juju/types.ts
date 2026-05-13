@@ -16,6 +16,7 @@ import type {
   VersionElem,
 } from "juju/jimm/JIMMV4";
 import type { FullStatusWithAnnotations, ModelInfo } from "juju/types";
+import type { TimelineEvent } from "components/Timeline/types";
 import type { DisableType } from "pages/AddModel/ConfigsConstraints/types";
 import type { ProcessOutcome } from "store/middleware/process";
 import type { GenericItemsState, GenericState } from "store/types";
@@ -161,6 +162,10 @@ export type AddModelState = {
   success?: boolean;
 };
 
+export type TimelineEventsState = SourceData<TimelineEvent[]>;
+
+export type TimelineEventsState = SourceData<TimelineEvent[]>;
+
 export type BlockEntry = {
   running: boolean;
   status: "initiated" | "pending" | null;
@@ -192,4 +197,33 @@ export type JujuState = {
   supportedJujuVersions: SupportedJujuVersionsState;
   addModelState: AddModelState;
   blockState: BlockState;
+  timelineEvents: TimelineEventsState;
+};
+
+export type BlockState = Record<string, BlockEntry>;
+
+export type JujuState = {
+  auditEvents: AuditEventsState;
+  crossModelQuery: CrossModelQueryState;
+  destroyModel: DestroyState;
+  commandHistory: CommandHistory;
+  controllers: Controllers | null;
+  models: ModelsList;
+  modelsError: null | string;
+  modelsLoaded: boolean;
+  modelListLoading: Record<string, boolean>;
+  modelData: ModelDataList;
+  modelFeatures: ModelFeaturesState;
+  modelUpgrade: ModelUpgradeState;
+  modelMigrationTargets: ModelMigrationTargetsState;
+  charms: Charm[];
+  rebac: ReBACState;
+  secrets: SecretsState;
+  cloudInfo: CloudState;
+  userCredentials: UserCredentialsState;
+  selectedApplications: Record<string, ApplicationStatus>;
+  supportedJujuVersions: SupportedJujuVersionsState;
+  addModelState: AddModelState;
+  blockState: BlockState;
+  timelineEvents: TimelineEventsState;
 };

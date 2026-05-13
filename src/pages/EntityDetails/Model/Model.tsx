@@ -10,6 +10,7 @@ import type { EntityDetailsRoute } from "components/Routes";
 import useCanConfigureModel from "hooks/useCanConfigureModel";
 import useModelAccess from "hooks/useModelAccess";
 import useModelStatus from "hooks/useModelStatus";
+import useStatusHistory from "hooks/useStatusHistory";
 import { useQueryParams } from "hooks/useQueryParams";
 import {
   getModelApplications,
@@ -75,6 +76,7 @@ const Model: FC = () => {
   const modelStatusData = useModelStatus();
 
   const { qualifier, modelName } = useParams<EntityDetailsRoute>();
+  useStatusHistory(modelName, qualifier);
 
   const [query] = useQueryParams<{
     entity: null | string;

@@ -6,6 +6,7 @@ import cloudInfo from "./cloud-info";
 import jimmSupportedVersions from "./jimm-supported-versions";
 import migrationTargets from "./migration-targets";
 import modelList from "./model-list";
+import statusHistory from "./status-history";
 import userCredentials from "./user-credentials";
 
 export default [
@@ -14,4 +15,5 @@ export default [
   migrationTargets.middleware,
   userCredentials.middleware,
   cloudInfo.middleware,
+  statusHistory.middleware,
 ] satisfies Middleware<void, RootState, Store["dispatch"]>[];

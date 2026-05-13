@@ -24,6 +24,8 @@ import type {
   UserModelList,
 } from "juju/types";
 
+import type { TimelineEvent } from "components/Timeline/types";
+
 import type {
   Controllers,
   JujuState,
@@ -36,6 +38,7 @@ import type {
   ModelUpgrade,
   AddModel,
   BlockEntry,
+  TimelineEventsState,
 } from "./types";
 import { getModelQualifier } from "./utils/models";
 
@@ -162,6 +165,11 @@ const slice = createSlice({
       loaded: false,
     },
     blockState: {},
+    timelineEvents: {
+      data: null,
+      error: null,
+      loading: false,
+    } as TimelineEventsState,
   } as JujuState,
   reducers: {
     updateModelList: (
@@ -892,6 +900,25 @@ const slice = createSlice({
       }
       state.blockState[action.payload.modelUUID].outcome =
         action.payload.outcome;
+    },
+    updateTimelineEvents: (
+      state,
+      {
+        payload,
+      }: PayloadAction<{
+        modelUUID: string;
+        update: Partial<SourceData<TimelineEvent[]>>;
+      }>,
+    ) => {
+      const value = state.timelineEvents;
+
+      value.loading = payload.update.loading ?? value.loading;
+      if (payload.update.data !== undefined) {
+        value.data = payload.update.data;
+      }
+      if (payload.update.error !== undefined) {
+        value.error = payload.update.error;
+      }
     },
   },
 });

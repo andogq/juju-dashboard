@@ -110,6 +110,7 @@ export const checkAuthMiddleware: Middleware<
       jujuActions.updateModelMigrationTargets.type,
       jujuActions.updateUserCredentials.type,
       jujuActions.updateCloudInfo.type,
+      jujuActions.updateTimelineEvents.type,
     ];
 
     const thunkAllowlist = [
