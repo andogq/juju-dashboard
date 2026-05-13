@@ -1,20 +1,20 @@
 export type TimelineEventType =
   // Status events (from statusHistory or polling diff)
-  | "status-change"
-  | "unit-error"
-  | "unit-resolved"
+  | "planned-deployment"
+  | "planned-maintenance"
+  | "planned-scaling"
   // Relation events (from polling diff)
   | "relation-created"
   | "relation-removed"
   // Scale events (from polling diff)
-  | "scale-up"
   | "scale-down"
+  | "scale-up"
   // Future/planned events (from external sources)
-  | "planned-deployment"
-  | "planned-maintenance"
-  | "planned-scaling";
+  | "status-change"
+  | "unit-error"
+  | "unit-resolved";
 
-export type TimelineEventSeverity = "info" | "warning" | "error" | "success";
+export type TimelineEventSeverity = "error" | "info" | "success" | "warning";
 
 // -- Payloads --
 
@@ -58,16 +58,16 @@ export interface PlannedScalingPayload {
 }
 
 export type EventPayload =
-  | { type: "status-change"; data: StatusChangePayload }
-  | { type: "unit-error"; data: UnitErrorPayload }
-  | { type: "unit-resolved"; data: UnitResolvedPayload }
-  | { type: "relation-created"; data: RelationEventPayload }
-  | { type: "relation-removed"; data: RelationEventPayload }
-  | { type: "scale-up"; data: ScaleEventPayload }
-  | { type: "scale-down"; data: ScaleEventPayload }
   | { type: "planned-deployment"; data: PlannedDeploymentPayload }
   | { type: "planned-maintenance"; data: PlannedMaintenancePayload }
-  | { type: "planned-scaling"; data: PlannedScalingPayload };
+  | { type: "planned-scaling"; data: PlannedScalingPayload }
+  | { type: "relation-created"; data: RelationEventPayload }
+  | { type: "relation-removed"; data: RelationEventPayload }
+  | { type: "scale-down"; data: ScaleEventPayload }
+  | { type: "scale-up"; data: ScaleEventPayload }
+  | { type: "status-change"; data: StatusChangePayload }
+  | { type: "unit-error"; data: UnitErrorPayload }
+  | { type: "unit-resolved"; data: UnitResolvedPayload };
 
 // -- Core event --
 
@@ -76,7 +76,7 @@ export interface TimelineEvent {
   type: TimelineEventType;
   timestamp: string;
   entity: string;
-  entityKind: "application" | "unit" | "relation" | "model";
+  entityKind: "application" | "model" | "relation" | "unit";
   payload: EventPayload;
   severity: TimelineEventSeverity;
   isFuture?: boolean;
@@ -94,3 +94,55 @@ export interface TimelineProps {
 export interface TimelineEventComponentProps {
   event: TimelineEvent;
 }
+
+export enum Label {
+  PAST_EVENTS = "Past Events",
+  FUTURE_EVENTS = "Planned Events",
+  NOW = "Now",
+}
+
+export enum TestId {
+  TIMELINE = "timeline",
+  TIMELINE_EVENT = "timeline-event",
+  NOW_MARKER = "now-marker",
+  PAST_SECTION = "past-section",
+  FUTURE_SECTION = "future-section",
+}
+
+export type TimelineEventType =
+  | "planned-deployment"
+  | "planned-maintenance"
+  | "planned-scaling"
+  | "relation-created"
+  | "relation-removed"
+  | "scale-down"
+  | "scale-up"
+  | "status-change"
+  | "unit-error"
+  | "unit-resolved";
+
+export type TimelineEventSeverity = "error" | "info" | "success" | "warning";
+
+export type TimelineEvent = {
+  id: string;
+  type: TimelineEventType;
+  timestamp: string; // ISO 8601
+  entity: string;
+  entityKind: "application" | "relation" | "unit";
+  detail: {
+    previousStatus?: string;
+    newStatus?: string;
+    message?: string;
+    relatedApp?: string;
+    interface?: string;
+    unitCount?: number;
+  };
+  severity: TimelineEventSeverity;
+  isFuture?: boolean;
+};
+
+export type TimelineProps = {
+  events: TimelineEvent[];
+  loading?: boolean;
+  emptyStateMsg?: string;
+};

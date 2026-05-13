@@ -5,4 +5,5 @@ export enum Label {
   LOGS = "Logs",
   MACHINES = "Machines",
   SECRETS = "Secrets",
+  TIMELINE = "Timeline",
 }

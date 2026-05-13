@@ -7,6 +7,8 @@ import AccessButton from "components/AccessButton";
 import EntityInfo from "components/EntityInfo";
 import InfoPanel from "components/InfoPanel";
 import type { EntityDetailsRoute } from "components/Routes";
+import Timeline from "components/Timeline";
+import { mockTimelineEvents } from "components/Timeline/mocks";
 import useCanConfigureModel from "hooks/useCanConfigureModel";
 import useModelAccess from "hooks/useModelAccess";
 import useModelStatus from "hooks/useModelStatus";
@@ -54,6 +56,7 @@ const shouldShow = (segment: string, activeView: string): boolean => {
     case "integrations":
     case "logs":
     case "secrets":
+    case "timeline":
       if (segment === "relations-title") {
         return true;
       }
@@ -259,6 +262,9 @@ const Model: FC = () => {
         {shouldShow("secrets", query.activeView) && canListSecrets ? (
           <Secrets />
         ) : null}
+        {shouldShow("timeline", query.activeView) && (
+          <Timeline events={mockTimelineEvents} />
+        )}
       </div>
     </>
   );

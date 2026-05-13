@@ -104,6 +104,16 @@ const ModelTabs: FC = () => {
         component: Link,
       });
     }
+
+    tabs.push({
+      active: activeView === ModelTab.TIMELINE,
+      label: Label.TIMELINE,
+      onClick: (ev: React.MouseEvent) => {
+        handleNavClick(ev);
+      },
+      to: urls.model.tab({ qualifier, modelName, tab: ModelTab.TIMELINE }),
+      component: Link,
+    });
   }
 
   return <Tabs links={tabs} />;
