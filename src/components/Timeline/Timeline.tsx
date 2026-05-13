@@ -4,6 +4,8 @@ import type { FC } from "react";
 import { testId } from "testing/utils";
 
 import TimelineEvent from "./TimelineEvent";
+import CollapsibleEventGroup from "./TimelineEventGroup/TimelineEventGroup";
+import { groupConsecutiveEvents } from "./groupEvents";
 import { Label, TestId, type TimelineProps } from "./types";
 
 const Timeline: FC<TimelineProps> = ({
@@ -15,8 +17,8 @@ const Timeline: FC<TimelineProps> = ({
     .filter((event) => !event.isFuture)
     .sort(
       (eventA, eventB) =>
-        new Date(eventB.timestamp).getTime() -
-        new Date(eventA.timestamp).getTime(),
+        new Date(eventA.timestamp).getTime() -
+        new Date(eventB.timestamp).getTime(),
     );
 
   const futureEvents = events
@@ -26,6 +28,9 @@ const Timeline: FC<TimelineProps> = ({
         new Date(eventA.timestamp).getTime() -
         new Date(eventB.timestamp).getTime(),
     );
+
+  const pastItems = groupConsecutiveEvents(pastEvents);
+  const futureItems = groupConsecutiveEvents(futureEvents);
 
   if (loading) {
     return (
@@ -46,15 +51,22 @@ const Timeline: FC<TimelineProps> = ({
   return (
     <div className="timeline" {...testId(TestId.TIMELINE)}>
       <div className="timeline__content">
-        {pastEvents.length > 0 && (
+        {pastItems.length > 0 && (
           <div className="timeline__section" {...testId(TestId.PAST_SECTION)}>
             <span className="timeline__section-label">
               {Label.PAST_EVENTS}
             </span>
             <div className="timeline__events">
-              {pastEvents.map((event) => (
-                <TimelineEvent key={event.id} event={event} />
-              ))}
+              {pastItems.map((item) =>
+                item.kind === "single" ? (
+                  <TimelineEvent key={item.event.id} event={item.event} />
+                ) : (
+                  <CollapsibleEventGroup
+                    key={item.group.id}
+                    group={item.group}
+                  />
+                ),
+              )}
             </div>
           </div>
         )}
@@ -64,7 +76,7 @@ const Timeline: FC<TimelineProps> = ({
           <span className="timeline__now-label">{Label.NOW}</span>
         </div>
 
-        {futureEvents.length > 0 && (
+        {futureItems.length > 0 && (
           <div
             className="timeline__section timeline__section--future"
             {...testId(TestId.FUTURE_SECTION)}
@@ -73,9 +85,16 @@ const Timeline: FC<TimelineProps> = ({
               {Label.FUTURE_EVENTS}
             </span>
             <div className="timeline__events">
-              {futureEvents.map((event) => (
-                <TimelineEvent key={event.id} event={event} />
-              ))}
+              {futureItems.map((item) =>
+                item.kind === "single" ? (
+                  <TimelineEvent key={item.event.id} event={item.event} />
+                ) : (
+                  <CollapsibleEventGroup
+                    key={item.group.id}
+                    group={item.group}
+                  />
+                ),
+              )}
             </div>
           </div>
         )}

@@ -165,4 +165,42 @@
     font-size: 0.8125rem;
     color: $color-mid-dark;
   }
+
+  &__event-group {
+    &--expanded {
+      .timeline__event-group-toggle-icon {
+        transform: rotate(180deg);
+      }
+    }
+
+    &-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.25rem 0.5rem;
+      margin: 0.25rem 0 0.25rem 2.375rem;
+      font-size: 0.75rem;
+      color: $color-mid-dark;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      border-radius: 0.25rem;
+
+      &:hover {
+        background: $color-x-light;
+      }
+
+      &-icon {
+        width: 0.875rem;
+        height: 0.875rem;
+        transition: transform 0.15s ease;
+      }
+    }
+
+    &-collapsed {
+      margin-left: 1rem;
+      padding-left: 1rem;
+      border-left: 2px solid $color-mid-light;
+    }
+  }
 }
